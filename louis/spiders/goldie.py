@@ -21,7 +21,7 @@ def convert_to_dict(url, soup):
         paragraphs = [p.get_text() for p in b.select('p')]
         urls = [(u.get_text(), u['href']) for u in b.select('a')]
         content = "\n".join(paragraphs)
-        print(urls)
+
         yield {
             'url': url,
             'title': title,
