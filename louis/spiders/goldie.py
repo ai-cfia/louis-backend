@@ -42,7 +42,7 @@ def convert_to_crawl_item(response):
     url = response.url
     now = int(time.time())
     lang = 'en'
-    if url.find('/fra/'):
+    if url.find('/fra/') != -1:
         lang = 'fr'
     
     yield CrawlItem({

@@ -17,7 +17,7 @@ class LouisPipeline:
         self.connection = psycopg2.connect(database="inspection.gc.ca")
                                            
     def close_spider(self, spider):
-        # open connection to postgresql database using psycopg2
+        # close connection to postgresql database using psycopg2
 
         self.connection.close()
 
@@ -26,5 +26,5 @@ class LouisPipeline:
         cursor = self.connection.cursor()
         cursor.execute("INSERT INTO public.crawl (url, title, lang, html_content, last_crawled, last_updated) VALUES (%s, %s, %s, %s, %s, %s)",
                        (adapter['url'], adapter['title'], adapter['lang'], adapter['html_content'], adapter['last_crawled'], adapter['last_updated']))
-        cursor.commit()
+        self.connection.commit()
         return item
