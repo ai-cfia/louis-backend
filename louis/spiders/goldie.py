@@ -4,6 +4,7 @@ import scrapy
 from bs4 import BeautifulSoup, Comment
 
 from louis.items import CrawlItem
+from louis.requests import extract_urls
 
 def wrap_headers(soup):
     last_div = None
@@ -68,8 +69,9 @@ def clean(response):
 
 class GoldieSpider(scrapy.Spider):
     name = "goldie"
-    allowed_domains = ["inspection.gc.ca"]
-    start_urls = ["https://inspection.canada.ca/inspection-and-enforcement/enforcement-of-the-sfcr/eng/1546989322632/1547741756885"]
+    allowed_domains = ["inspection.gc.ca", "inspection.canada.ca"]
+    start_urls = ["https://inspection.canada.ca/splash"]
 
     def parse(self, response):
         yield from convert_to_crawl_item(response)
+        yield from extract_urls(response, self.parse)

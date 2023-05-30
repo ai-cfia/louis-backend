@@ -3,7 +3,11 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import psycopg2
 from scrapy import signals
+from scrapy.exceptions import IgnoreRequest
+from scrapy.selector import Selector
+from louis.requests import extract_urls
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -59,12 +63,14 @@ class LouisSpiderMiddleware:
         spider.logger.info("Spider opened: %s" % spider.name)
 
 
-
-
 class LouisDownloaderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
+    def __init__(self) -> None:
+        # open connection to database
+        self.connection = psycopg2.connect(database="inspection.canada.ca")
+        self.cursor = self.connection.cursor()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -83,10 +89,20 @@ class LouisDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
+        
+        # check if url is in database
+        # self.cursor.execute("SELECT * FROM public.crawl WHERE url = %s", (request.url,))
+        # row = self.cursor.fetchone()
+        # if row is None:
+        #     parsed = urlparse(request.url)
+        #     return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path)
+        # else:
+        #     selector = Selector(text=row['html_content'])
+        #     yield from extract_urls(selector)
+        #     raise IgnoreRequest("URL already crawled %s" % request.url)
         parsed = urlparse(request.url)
-        print(request.url)
-        fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path)
-
+        return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
+    
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
 

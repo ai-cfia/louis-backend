@@ -36,13 +36,13 @@ ALTER USER vscode WITH SUPERUSER;
 and then
 
 ```
-createdb inspection.gc.ca
+createdb -E utf-8 inspection.canada.ca
 ```
 
 and then
 
 ```
-psql -d inspection.gc.ca
+psql -d inspection.canada.ca
 ```
 
 ## database client
@@ -56,3 +56,4 @@ Suggested: https://dbeaver.io/download/
 * [Chunking Strategies for LLM Applications](https://www.pinecone.io/learn/chunking-strategies/)
 * [Scrapy](https://docs.scrapy.org/en/latest/index.html)
 * [Scrapy: saving to postgres](https://scrapeops.io/python-scrapy-playbook/scrapy-save-data-postgres/)
+* [Switch postgresql to utf-8](https://tutorials.technology/tutorials/How-to-change-postgresql-database-encoding-to-UTF8-from-SQL_ASCII.html?utm_content=cmp-true)
