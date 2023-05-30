@@ -1,5 +1,7 @@
 import unittest
 
+from scrapy import Request
+
 from louis.fake_response import fake_response_from_file
 from louis.spiders.goldie import GoldieSpider
 
@@ -17,6 +19,9 @@ class TestGoldie(unittest.TestCase):
     def _test_item_results(self, results, expected_length):
         returned_results = []
         for item in results:
+            if isinstance(item, Request):
+                # probably a Request object for additional processing
+                continue
             self.assertIsNotNone(item['url'])
             returned_results.append(item)
         self.assertEqual(len(returned_results), expected_length)
