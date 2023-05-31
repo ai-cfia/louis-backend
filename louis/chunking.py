@@ -39,7 +39,7 @@ def chunk(html_content):
 
             # we started seeing headers so we initialize a top-level h0-block
             if parent_div is None:
-                parent_div = t.wrap(soup.new_tag("div", **{"class": f"h0-block"}))
+                parent_div = t.wrap(soup.new_tag("div", **{"class": f"h0-block blocks"}))
                 parent_div.insert(0, "\n")
                 parent_div.append("\n")
 
@@ -72,7 +72,7 @@ def chunk(html_content):
 
             # we nest the current tag into a div representing the heading
             parent_div = t.wrap(soup.new_tag(
-                "div", **{"class": f"{t.name}-block"}))
+                "div", **{"class": f"{t.name}-block blocks"}))
             parent_div.insert(0, "\n")
             parent_div.append("\n")        
             current_level = new_level
@@ -91,26 +91,38 @@ def chunk(html_content):
     while True:
         parent_div = parent_div.parent
         compute_tokens(parent_div)
-        if parent_div['class'] == ['h0-block']:
+        if 'h0-block' in parent_div['class']:
             break
 
     return soup
 
-def split(soup):
+import copy
+
+def split(soup, level=0):
+    """returns a list of chunks, each chunk is a tuple (text_content, tokens)"""
     # depth-first search to collect all the leaf nodes
-    level = 0
+    chunks = []
     for t in soup.find_all():
-        if 'class' in t.attrs and t.attrs['class'] == [f"h{level}-block"]:
-            tokens = int(t.attrs['token_count'])
-            if tokens > 512:
-                # we need to split this div into smaller chunks
-                # we need to find the first div that has less than 512 tokens
-                # and split it there
-                # BFS and then DFS
-                pass
+        if 'class' in t.attrs and f"h{level}-block" in t.attrs['class']:
+            token_count = int(t.attrs['token_count'])
+            if token_count > 512:
+                chunks.extend(split(t, level+1))
             else:
-                extract = t.extract()
-                for t in extract.select('.h0-block'):
-                    print(t)
-                    t.replaceWithChildren()
-                return extract
+                chunks.append((t.get_text(), t.attrs['tokens'], token_count))
+    
+    return chunks
+         
+if __name__ == '__main__':
+    example1 = ('<h1>high-level title</h1>'
+                '<h2>second-level title</h2>'
+                    '<p>paragraph below second-level</p>'
+                '<h2>another second-level</h2>'
+                    '<p>paragraph within 2nd level</p>'
+                    '<h3>third-level title</h3>'
+                        '<p>paragraph below third-level heading</p>'
+            '<h1>last high-level title, sibling to the first</h1>')
+
+    soup = chunk(example1) 
+    splitted = split(soup)
+    print(splitted[0][0])
+    print(splitted[0][1])
