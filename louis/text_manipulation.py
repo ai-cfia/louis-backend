@@ -49,13 +49,13 @@ def chunk(html_content):
                 compute_tokens(parent_div)
                 # we fetch the parent div
                 parent_div = parent_div.parent
+                parent_div.append(t)
             # child: we push the tag to the block
             elif new_level > current_level:
                 # inner tag we append to current parent
                 parent_div.append(t)
             # higher-level heading: we close the current div and find the higher-level div
             elif new_level < current_level:
-                # pop from stack to see if we can find a higher level parent_div
                 while True:
                     parent_div = parent_div.parent
                     previous_parent_div_level = int(parent_div.attrs['class'][0][1])
@@ -87,9 +87,12 @@ def chunk(html_content):
                 parent_div.append("\n")
 
     # we finished so we compute the last parent_div
-    while parent_div is not None:
-        compute_tokens(parent_div)
+    compute_tokens(parent_div)
+    while True:
         parent_div = parent_div.parent
+        compute_tokens(parent_div)
+        if parent_div['class'] == ['h0-block']:
+            break
 
     print(soup.prettify())
     # sorted_tags = sorted(all_tags, key=lambda x: x[1], reverse=True)
