@@ -94,18 +94,23 @@ def chunk(html_content):
         if parent_div['class'] == ['h0-block']:
             break
 
-    print(soup.prettify())
-    # sorted_tags = sorted(all_tags, key=lambda x: x[1], reverse=True)
-    # filter(lambda x: x[1] > 512, sorted_tags)
-    # print(sorted_tags)
+    return soup
 
-if __name__ == "__main__":
-    chunk(
-        '<h1>high-level title</h1>'
-            '<h2>second-level title</h2>'
-                '<p>paragraph below second-level</p>'
-            '<h2>another second-level</h2>'
-                '<p>paragraph within 2nd level</p>'
-                '<h3>third-level title</h3>'
-                    '<p>paragraph below third-level heading</p>'
-        '<h1>last high-level title, sibling to the first</h1>')
+def split(soup):
+    # depth-first search to collect all the leaf nodes
+    level = 0
+    for t in soup.find_all():
+        if 'class' in t.attrs and t.attrs['class'] == [f"h{level}-block"]:
+            tokens = int(t.attrs['token_count'])
+            if tokens > 512:
+                # we need to split this div into smaller chunks
+                # we need to find the first div that has less than 512 tokens
+                # and split it there
+                # BFS and then DFS
+                pass
+            else:
+                extract = t.extract()
+                for t in extract.select('.h0-block'):
+                    print(t)
+                    t.replaceWithChildren()
+                return extract

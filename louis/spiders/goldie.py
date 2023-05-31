@@ -6,35 +6,6 @@ from bs4 import BeautifulSoup, Comment
 from louis.items import CrawlItem
 from louis.requests import extract_urls
 
-def wrap_headers(soup):
-    last_div = None
-    for tag in soup.select("h2, p"):
-        if tag.name == "h2":
-            last_div = tag.wrap(soup.new_tag("div", **{"class": "h2-block"}))
-            last_div.insert(0, "\n")
-            last_div.append("\n")
-            continue
-
-        if last_div is not None:
-            last_div.append(tag)
-            last_div.append("\n")
-
-def convert_to_chunk_items(url, soup):
-    wrap_headers(soup)
-    title = soup.h1.text
-    for b in soup.select('.h2-block'):
-        paragraphs = [p.get_text() for p in b.select('p')]
-        urls = [(u.get_text(), u['href']) for u in b.select('a')]
-        content = "\n".join(paragraphs)
-
-        yield {
-            'url': url,
-            'title': title,
-            'subtitle': b.h2.text,
-            'content': content,
-            'urls': urls
-        }
-
 def convert_to_crawl_item(response):
     title = " ".join([t.get() for t in response.xpath("//title/text()")])
     title = re.sub(r'\s+', ' ', title).strip()

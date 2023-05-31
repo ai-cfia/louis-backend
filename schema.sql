@@ -11,3 +11,13 @@ create table if not exists public.crawl (
 	primary key(id),
 	unique(url)
 );
+
+create table if not exists public.chunk (
+	id uuid default uuid_generate_v4 (),
+	crawl_uuid uuid references public.crawl(id),
+	title text,
+	text_content text,
+	text_content_hash text,
+	primary key(id),
+	unique(text_content_hash)
+);

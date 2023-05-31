@@ -16,10 +16,11 @@ class CrawlItem(scrapy.Item):
     last_updated = scrapy.Field()
 
 class ChunkItem(scrapy.Item):
-    id = scrapy.Field()
-    crawl_uuid = scrapy.Field()
-    chunk = scrapy.Field()
-    chunk_hash = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    subtitle = scrapy.Field()
+    text_content = scrapy.Field()
+    urls = scrapy.Field()
 
 class EmbeddingItem(scrapy.Item):
     chunk_id = scrapy.Field()

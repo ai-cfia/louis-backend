@@ -14,7 +14,7 @@ from itemadapter import is_item, ItemAdapter
 
 from urllib.parse import urlparse
 
-from louis.fake_response import fake_response_from_file
+from louis.fake_response import fake_response_from_file, fake_response_from_row
 
 class LouisSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -70,7 +70,6 @@ class LouisDownloaderMiddleware:
     def __init__(self) -> None:
         # open connection to database
         self.connection = psycopg2.connect(database="inspection.canada.ca")
-        self.cursor = self.connection.cursor()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -80,28 +79,15 @@ class LouisDownloaderMiddleware:
         return s
 
     def process_request(self, request, spider):
-        # Called for each request that goes through the downloader
-        # middleware.
-
-        # Must either:
-        # - return None: continue processing this request
-        # - or return a Response object
-        # - or return a Request object
-        # - or raise IgnoreRequest: process_exception() methods of
-        #   installed downloader middleware will be called
-        
-        # check if url is in database
-        # self.cursor.execute("SELECT * FROM public.crawl WHERE url = %s", (request.url,))
-        # row = self.cursor.fetchone()
-        # if row is None:
-        #     parsed = urlparse(request.url)
-        #     return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path)
-        # else:
-        #     selector = Selector(text=row['html_content'])
-        #     yield from extract_urls(selector)
-        #     raise IgnoreRequest("URL already crawled %s" % request.url)
-        parsed = urlparse(request.url)
-        return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
+        if spider.name == 'goldie':
+            parsed = urlparse(request.url)
+            return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
+        elif spider.name == 'hawn':
+            self.cursor = self.connection.cursor()
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM public.crawl WHERE url = %s", (request.url,))
+                row = self.cursor.fetchone()
+                return fake_response_from_row(row, request.url)
     
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.

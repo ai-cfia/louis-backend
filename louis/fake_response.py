@@ -31,3 +31,21 @@ def fake_response_from_file(file_name, url):
         body=file_content,
         encoding='utf-8')
     return response
+
+def fake_response_from_row(row, url):
+    """
+    Create a Scrapy fake HTTP response from a HTML file
+    @param file_name: The relative filename from the responses directory,
+                      but absolute paths are also accepted.
+    @param url: The URL of the response.
+    returns: A scrapy HTTP response which can be used for unittesting.
+    """
+    request = Request(url=url)
+    if not row['html_content']:
+        return Response(url=url, status=404, request=request)    
+  
+    response = HtmlResponse(url=url,
+        request=request,
+        body=row['html_content'],
+        encoding='utf-8')
+    return response
