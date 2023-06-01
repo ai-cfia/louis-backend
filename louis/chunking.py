@@ -40,8 +40,6 @@ def chunk(html_content):
             # we started seeing headers so we initialize a top-level h0-block
             if parent_div is None:
                 parent_div = t.wrap(soup.new_tag("div", **{"class": f"h0-block blocks"}))
-                parent_div.insert(0, "\n")
-                parent_div.append("\n")
 
             # sibling: we close the previous tag and create a new one
             if new_level == current_level:
@@ -73,18 +71,12 @@ def chunk(html_content):
             # we nest the current tag into a div representing the heading
             parent_div = t.wrap(soup.new_tag(
                 "div", **{"class": f"{t.name}-block blocks"}))
-            parent_div.insert(0, "\n")
-            parent_div.append("\n")        
             current_level = new_level
-
-            # compute tokens for the heading
-            compute_tokens(t)
         else:
             # this is content so we push it to the current heading div
             if parent_div is not None:
-                compute_tokens(t)
                 parent_div.append(t)
-                parent_div.append("\n")
+
 
     # we finished so we compute the last parent_div
     compute_tokens(parent_div)
@@ -108,7 +100,7 @@ def split(soup, level=0):
             if token_count > 512:
                 chunks.extend(split(t, level+1))
             else:
-                chunks.append((t.get_text(), t.attrs['tokens'], token_count))
+                chunks.append(("\n".join(t.stripped_strings), t.attrs['tokens'], token_count))
     
     return chunks
          
@@ -123,6 +115,7 @@ if __name__ == '__main__':
             '<h1>last high-level title, sibling to the first</h1>')
 
     soup = chunk(example1) 
+    print(soup.prettify())
     splitted = split(soup)
     print(splitted[0][0])
     print(splitted[0][1])
