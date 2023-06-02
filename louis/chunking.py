@@ -1,16 +1,13 @@
-# in each HTML document, find all the headings and split the document into chunks
-# for each heading, wrap the heading and its siblings into a div, including other heading of 
-# a higher level
-# if 
-
-
 from bs4 import BeautifulSoup
 import re
 
 import tiktoken
 enc = tiktoken.get_encoding("cl100k_base")
 
+HEADERS_RE = re.compile('^h[1-6]$')
+
 def compute_tokens(tag):
+    """Compute the tokens and token count of a tag, caching the result in the tag"""
     if 'tokens' in tag.attrs:
         # content is cached in tag
         text_content = tag.attrs['text_content']
@@ -25,66 +22,63 @@ def compute_tokens(tag):
         tag.attrs['token_count'] = f"{token_count}"
         tag.attrs['text_content'] = f"{text_content}"
     return {
-        'text_content': text_content, 
-        'tokens': tokens, 
+        'text_content': text_content,
+        'tokens': tokens,
         'token_count': token_count
     }
 
-HEADERS_RE = re.compile('^h[1-6]$')
-
 def mark_parent(tag):
+    """Mark the parent of a tag as a parent, recursively"""
     # ok, parent is already identified as parent
     if 'parent' in tag.attrs:
         return
-    
+
     # set parent flag
     tag.attrs['parent'] = True
 
     # if we're at the body tag, we're done
     if tag.name == 'body':
         return
-    
+
     # otherwise we keep going
     return mark_parent(tag.parent)
 
 find_next_parent_div = lambda t: t.find_parent(class_='blocks')
 
+def mark_processed(tag):
+    """Mark a tag as processed, recursively"""
+    tag.attrs['processed'] = True
+    for c in tag.find(class_='blocks'):
+        c.attrs['processed'] = True
+
 def collect_chunks(t, total_token_count, chunks):
-    chunk = compute_tokens(t)
-    prospective_total = total_token_count + chunk['token_count']
-    if prospective_total <= 512:
-        t.attrs['processed'] = True
-        chunks.append(chunk)
-    elif prospective_total > 512:
-        # forget about this chunk, it's too big
-        return
+    """Collect chunks of text, starting from a tag, until the total token count is at most 512"""
+    if 'processed' not in t.attrs:
+        chunk = compute_tokens(t)
+        prospective_total = total_token_count + chunk['token_count']
+        if prospective_total <= 512:
+            mark_processed(t)
+            chunks.append(chunk)
+        elif prospective_total > 512:
+            # forget about this chunk, it's too big
+            return
+    else:
+        # this is already processed, nothing changes and we skip to the next sibling
+        # or more likely the next parent
+        prospective_total = total_token_count
+
     if t.next_sibling:
         # there's a sibling, let's see how much we can fit in
         return collect_chunks(t.next_sibling, prospective_total, chunks)
     else:
-        # no more siblings so we go up the tree to the next block
+        # no more siblings so we go up the tree to the parent block
         # which includes this one and all the siblings
         # so we reset chunks
         chunks.clear()
         return collect_chunks(find_next_parent_div(t), 0, chunks)
-    
-def chunk(html_content):
-    """Chunk an HTML document into a list of chunks.
-    
-     chunks are made up of a title, and a body (which is a list of subheadings and paragraphs)
-    
-    each chunk should have between 256 and 512 tokens (ada tokens) 
-    or less if the entire document is less than 256 tokens
 
-    returns a list of chunks, each chunk is a tuple (text_content, tokens, token_count)
-    """
-    # chunks are organized by headings in a graph
-    # we organize leaf nodes contents into chunks 
-
-    soup = BeautifulSoup(html_content, "lxml")
-
-    # make sure html fragments are wrapped in html and body tags
-    soup.smooth()
+def block_by_heading(soup):
+    """Wrap each heading and its siblings into a div, including other heading of a higher level"""
     body = soup.select('body')[0]
     body.attrs['class'] = body.attrs.get('class', []) + ["blocks", "h0-block"]
 
@@ -106,14 +100,31 @@ def chunk(html_content):
                     # sibling header is of same or lower level
                     break
             parent_div.append(s)
-        
+
         # we recursively mark all the block div above as a parent block
-        # any non-parent block left is a leaf
+        # any non-parent block left at the end will be a leaf
         mark_parent(parent_div.parent)
 
+def combine_chunks_into_single_chunk(chunks):
+    """Combine list of chunks into a single chunk"""
+    # we return when there's only a single chunk left
+    if len(chunks) == 1:
+        return chunks[0]
+
+    for i in range(len(chunks)-1):
+        chunk = chunks[i]
+        next_chunk = chunks[i+1]
+        chunk['text_content'] += " " + next_chunk['text_content']
+        chunk['tokens'] += next_chunk['tokens']
+        chunk['token_count'] += next_chunk['token_count']
+        del chunks[i+1]
+        return combine_chunks_into_single_chunk(chunks)
+
+def segment_blocks_into_chunks(blocks):
+    """Segment blocks into chunks of 256-512 tokens"""
     # collect chunks from leafs
     all_chunks = []
-    for t in soup.select('.blocks'):
+    for t in blocks:
         # this chunk is a parent, we start at the leafs
         if 'parent' in t.attrs:
             continue
@@ -122,11 +133,35 @@ def chunk(html_content):
             continue
         chunks = []
         collect_chunks(t, 0, chunks)
-        all_chunks.extend(chunks)
+        chunk = combine_chunks_into_single_chunk(chunks)
+        all_chunks.append(chunk)
+    return all_chunks
 
-    return (soup, all_chunks)
+def chunk(html_content):
+    """Chunk an HTML document into a list of chunks.
 
-    
+     chunks are made up of a title, and a body (which is a list of subheadings and paragraphs)
+
+    each chunk should have between 256 and 512 tokens (ada tokens)
+    or less if the entire document is less than 256 tokens
+
+    returns a list of chunks, each chunk is a tuple (text_content, tokens, token_count)
+    """
+    # chunks are organized by headings in a graph
+    # we organize leaf nodes contents into chunks
+
+    soup = BeautifulSoup(html_content, "lxml")
+
+    # make sure html fragments are wrapped in html and body tags
+    soup.smooth()
+
+    block_by_heading(soup)
+
+    chunks = segment_blocks_into_chunks(soup.select('.blocks'))
+
+    return (soup, chunks)
+
+
 
 if __name__ == '__main__':
     # open file from first parameter
@@ -134,6 +169,6 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as f:
         html = f.read()
 
-    soup, chunks = chunk(html) 
+    soup, chunks = chunk(html)
     print(soup.prettify())
     print(chunks)
