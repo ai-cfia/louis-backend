@@ -20,9 +20,9 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 class TestChunking(unittest.TestCase):
     def test_chunking(self):
-        soup = chunk(example1) 
+        soup, splitted = chunk(example1) 
         self.assertEqual(
-            soup.select('div.h0-block')[0]['tokens'], EXPECTED_TOKENS)
+            soup.select('body.h0-block')[0]['tokens'], EXPECTED_TOKENS)
         splitted = split(soup)
         #print(splitted)
         self.assertEqual(splitted[0][1], EXPECTED_TOKENS)
@@ -30,7 +30,17 @@ class TestChunking(unittest.TestCase):
     def test_chunking_sample1(self):
         with open(f"{CWD}/responses/1547741756885.html") as f:
             html = f.read()
-        soup = chunk(html)
-        # print(soup)
-        splitted = split(soup)
-        # print(splitted)
+        soup, splitted = chunk(html)
+        print(soup)
+        print(splitted)
+
+    def test_chunking_sample2(self):
+        with open(f"{CWD}/responses/1430250287405.html") as f:
+            html = f.read()
+        soup, splitted = chunk(html)
+
+    def test_chunking_fragment2(self):
+        with open(f"{CWD}/responses/fragment2.html") as f:
+            html = f.read()
+        soup, splitted = chunk(html)
+        self.assertEqual(splitted[0][0], "Z Zoonose ( Zoonosis ) Le terme « zoonose » n'est pas employé dans la Loi sur la salubrité des aliments au Canada ni dans le Règlement sur la salubrité des aliments au Canada . En général, le terme « zoonose » indique infection ou maladie pouvant être transmise entre les animaux et les humains.")
