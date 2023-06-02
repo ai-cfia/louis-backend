@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from louis.chunking import chunk, split
+from louis.chunking import chunk
 
 example1 = ('<h1>high-level title</h1>'
                 '<h2>second-level title</h2>'
@@ -20,27 +20,26 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 class TestChunking(unittest.TestCase):
     def test_chunking(self):
-        soup, splitted = chunk(example1) 
+        soup, chunks = chunk(example1)
         self.assertEqual(
             soup.select('body.h0-block')[0]['tokens'], EXPECTED_TOKENS)
-        splitted = split(soup)
-        #print(splitted)
-        self.assertEqual(splitted[0][1], EXPECTED_TOKENS)
+        print(f"'{chunks[0]['tokens']}'")
+        self.assertEqual(chunks[0]['tokens'], EXPECTED_TOKENS)
 
     def test_chunking_sample1(self):
         with open(f"{CWD}/responses/1547741756885.html") as f:
             html = f.read()
-        soup, splitted = chunk(html)
-        print(soup)
-        print(splitted)
+        soup, chunks = chunk(html)
 
     def test_chunking_sample2(self):
         with open(f"{CWD}/responses/1430250287405.html") as f:
             html = f.read()
-        soup, splitted = chunk(html)
+        soup, chunks = chunk(html)
 
     def test_chunking_fragment2(self):
         with open(f"{CWD}/responses/fragment2.html") as f:
             html = f.read()
-        soup, splitted = chunk(html)
-        self.assertEqual(splitted[0][0], "Z Zoonose ( Zoonosis ) Le terme « zoonose » n'est pas employé dans la Loi sur la salubrité des aliments au Canada ni dans le Règlement sur la salubrité des aliments au Canada . En général, le terme « zoonose » indique infection ou maladie pouvant être transmise entre les animaux et les humains.")
+        soup, chunks = chunk(html)
+        # print(soup.prettify())
+        # print(chunks[0]['text_content'])
+        self.assertEqual(chunks[0]['text_content'], "Z Zoonose (Zoonosis) Le terme « zoonose » n'est pas employé dans la Loi sur la salubrité des aliments au Canada ni dans le Règlement sur la salubrité des aliments au Canada. En général, le terme « zoonose » indique infection ou maladie pouvant être transmise entre les animaux et les humains.")

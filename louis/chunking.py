@@ -1,3 +1,4 @@
+import json
 from bs4 import BeautifulSoup
 import re
 
@@ -15,12 +16,12 @@ def compute_tokens(tag):
         tokens = tag.attrs['tokens']
     else:
         # extract and clean up tag text content, storing it in tag
-        text_content = re.sub(r'\s+', ' ', tag.get_text(strip=True))
+        text_content = re.sub(r'\s+', ' ', tag.get_text()).strip()
         tokens = enc.encode(text_content)
         token_count = len(tokens)
-        tag.attrs['tokens'] = f"{tokens}"
-        tag.attrs['token_count'] = f"{token_count}"
-        tag.attrs['text_content'] = f"{text_content}"
+        tag.attrs['tokens'] = str(tokens)
+        tag.attrs['token_count'] = str(token_count)
+        tag.attrs['text_content'] = text_content
     return {
         'text_content': text_content,
         'tokens': tokens,
@@ -48,19 +49,49 @@ find_next_parent_div = lambda t: t.find_parent(class_='blocks')
 def mark_processed(tag):
     """Mark a tag as processed, recursively"""
     tag.attrs['processed'] = True
-    for c in tag.find(class_='blocks'):
+    child_blocks = tag.find_all(class_='blocks')
+    for c in child_blocks:
         c.attrs['processed'] = True
+
+def split_chunk_into_subchunk(chunk, min_tokens=256, max_tokens=512):
+    """some leafs might be bigger than desired. split text into smaller chunks"""
+    assert chunk['token_count'] > max_tokens
+    text_content = chunk['text_content']
+    sentences = text_content.split(' ')
+    buckets = [[]]
+    bucket = buckets[0]
+    bucket_size = 0
+    for text_content in sentences:
+        tokens = enc.encode(text_content)
+        token_count = len(tokens)
+        if bucket_size + token_count > max_tokens:
+            # we're over the limit, we start a new bucket
+            bucket = []
+            buckets.append(bucket)
+            bucket_size = 0
+
+        bucket.append({
+            'text_content': text_content,
+            'tokens': tokens,
+            'token_count': token_count
+        })
+        bucket_size += token_count
+    chunks = []
+    for b in buckets:
+        chunk = combine_chunks_into_single_chunk(b)
+        chunks.append(chunk)
+    return chunks
 
 def collect_chunks(t, total_token_count, chunks):
     """Collect chunks of text, starting from a tag, until the total token count is at most 512"""
     if 'processed' not in t.attrs:
         chunk = compute_tokens(t)
-        prospective_total = total_token_count + chunk['token_count']
+        prospective_total = total_token_count + int(chunk['token_count'])
         if prospective_total <= 512:
             mark_processed(t)
             chunks.append(chunk)
         elif prospective_total > 512:
-            # forget about this chunk, it's too big
+            chunks.extend(split_chunk_into_subchunk(chunk))
             return
     else:
         # this is already processed, nothing changes and we skip to the next sibling
@@ -74,8 +105,17 @@ def collect_chunks(t, total_token_count, chunks):
         # no more siblings so we go up the tree to the parent block
         # which includes this one and all the siblings
         # so we reset chunks
-        chunks.clear()
-        return collect_chunks(find_next_parent_div(t), 0, chunks)
+        parent_div = find_next_parent_div(t)
+        if parent_div:
+            parent_chunks = []
+            collect_chunks(parent_div, 0, parent_chunks)
+            if len(parent_chunks) > 0:
+                chunks.clear()
+                chunks.extend(parent_chunks)
+            return
+        else:
+            # we're at the top of the tree
+            return
 
 def block_by_heading(soup):
     """Wrap each heading and its siblings into a div, including other heading of a higher level"""
@@ -107,16 +147,27 @@ def block_by_heading(soup):
 
 def combine_chunks_into_single_chunk(chunks):
     """Combine list of chunks into a single chunk"""
+    assert len(chunks) > 0
+
     # we return when there's only a single chunk left
     if len(chunks) == 1:
-        return chunks[0]
+        chunk = chunks[0]
+        if  isinstance(chunk['tokens'], str):
+            chunk['tokens'] = json.loads(chunk['tokens'])
+            chunk['token_count'] = int(chunk['token_count'])
+        return chunk
 
     for i in range(len(chunks)-1):
         chunk = chunks[i]
         next_chunk = chunks[i+1]
         chunk['text_content'] += " " + next_chunk['text_content']
-        chunk['tokens'] += next_chunk['tokens']
-        chunk['token_count'] += next_chunk['token_count']
+        if  isinstance(chunk['tokens'], str):
+            chunk['tokens'] = json.loads(chunk['tokens']) + json.loads(next_chunk['tokens'])
+            chunk['token_count'] = int(chunk['token_count']) + int(next_chunk['token_count'])
+        else:
+            chunk['tokens'] += next_chunk['tokens']
+            chunk['token_count'] += next_chunk['token_count']
+        assert chunk['token_count'] <= 512
         del chunks[i+1]
         return combine_chunks_into_single_chunk(chunks)
 
