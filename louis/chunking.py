@@ -12,8 +12,8 @@ def compute_tokens(tag):
     if 'tokens' in tag.attrs:
         # content is cached in tag
         text_content = tag.attrs['text_content']
-        token_count = tag.attrs['token_count']
-        tokens = tag.attrs['tokens']
+        token_count = int(tag.attrs['token_count'])
+        tokens = json.loads(tag.attrs['tokens'])
     else:
         # extract and clean up tag text content, storing it in tag
         text_content = re.sub(r'\s+', ' ', tag.get_text()).strip()
@@ -53,11 +53,11 @@ def mark_processed(tag):
     for c in child_blocks:
         c.attrs['processed'] = True
 
-def split_chunk_into_subchunk(chunk, min_tokens=256, max_tokens=512):
+def split_chunk_into_subchunks(chunk, min_tokens=256, max_tokens=512):
     """some leafs might be bigger than desired. split text into smaller chunks"""
     assert chunk['token_count'] > max_tokens
     text_content = chunk['text_content']
-    sentences = text_content.split(' ')
+    sentences = text_content.split('.')
     buckets = [[]]
     bucket = buckets[0]
     bucket_size = 0
@@ -82,16 +82,16 @@ def split_chunk_into_subchunk(chunk, min_tokens=256, max_tokens=512):
         chunks.append(chunk)
     return chunks
 
-def collect_chunks(t, total_token_count, chunks):
+def collect_chunks_from_tag(t, total_token_count, chunks):
     """Collect chunks of text, starting from a tag, until the total token count is at most 512"""
     if 'processed' not in t.attrs:
         chunk = compute_tokens(t)
         prospective_total = total_token_count + int(chunk['token_count'])
         if prospective_total <= 512:
-            mark_processed(t)
             chunks.append(chunk)
+            mark_processed(t)
         elif prospective_total > 512:
-            chunks.extend(split_chunk_into_subchunk(chunk))
+            # too big, we skip it and let next iteration handle it
             return
     else:
         # this is already processed, nothing changes and we skip to the next sibling
@@ -100,7 +100,7 @@ def collect_chunks(t, total_token_count, chunks):
 
     if t.next_sibling:
         # there's a sibling, let's see how much we can fit in
-        return collect_chunks(t.next_sibling, prospective_total, chunks)
+        return collect_chunks_from_tag(t.next_sibling, prospective_total, chunks)
     else:
         # no more siblings so we go up the tree to the parent block
         # which includes this one and all the siblings
@@ -108,7 +108,7 @@ def collect_chunks(t, total_token_count, chunks):
         parent_div = find_next_parent_div(t)
         if parent_div:
             parent_chunks = []
-            collect_chunks(parent_div, 0, parent_chunks)
+            collect_chunks_from_tag(parent_div, 0, parent_chunks)
             if len(parent_chunks) > 0:
                 chunks.clear()
                 chunks.extend(parent_chunks)
@@ -152,24 +152,15 @@ def combine_chunks_into_single_chunk(chunks):
     # we return when there's only a single chunk left
     if len(chunks) == 1:
         chunk = chunks[0]
-        if  isinstance(chunk['tokens'], str):
-            chunk['tokens'] = json.loads(chunk['tokens'])
-            chunk['token_count'] = int(chunk['token_count'])
         return chunk
 
-    for i in range(len(chunks)-1):
-        chunk = chunks[i]
-        next_chunk = chunks[i+1]
+    chunk = chunks[0]
+    for next_chunk in chunks[1:]:
         chunk['text_content'] += " " + next_chunk['text_content']
-        if  isinstance(chunk['tokens'], str):
-            chunk['tokens'] = json.loads(chunk['tokens']) + json.loads(next_chunk['tokens'])
-            chunk['token_count'] = int(chunk['token_count']) + int(next_chunk['token_count'])
-        else:
-            chunk['tokens'] += next_chunk['tokens']
-            chunk['token_count'] += next_chunk['token_count']
+        chunk['tokens'] += next_chunk['tokens']
+        chunk['token_count'] += next_chunk['token_count']
         assert chunk['token_count'] <= 512
-        del chunks[i+1]
-        return combine_chunks_into_single_chunk(chunks)
+    return chunk
 
 def segment_blocks_into_chunks(blocks):
     """Segment blocks into chunks of 256-512 tokens"""
@@ -179,13 +170,29 @@ def segment_blocks_into_chunks(blocks):
         # this chunk is a parent, we start at the leafs
         if 'parent' in t.attrs:
             continue
-        # this chunk is already identified
+        # this chunk is already taken care of
         if 'processed' in t.attrs:
             continue
-        chunks = []
-        collect_chunks(t, 0, chunks)
-        chunk = combine_chunks_into_single_chunk(chunks)
-        all_chunks.append(chunk)
+        chunk = compute_tokens(t)
+        if chunk['token_count'] <= 512:
+            if chunk['token_count'] >= 256:
+                # perfect sized chunk
+                all_chunks.append(chunk)
+                mark_processed(t)
+            else: # < 256:
+                # chunk too small
+                chunks = []
+                # we collect siblings until we reach 256 tokens
+                collect_chunks_from_tag(t, chunk['token_count'], chunks)
+                chunk = combine_chunks_into_single_chunk(chunks)
+                all_chunks.append(chunk)
+        else:
+            # chunk too big
+            chunks = []
+            split_chunk_into_subchunks(chunk, chunks)
+            mark_processed(t)
+            all_chunks.extend(chunks)
+
     return all_chunks
 
 def chunk(html_content):

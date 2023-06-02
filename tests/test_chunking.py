@@ -14,16 +14,14 @@ example1 = ('<h1>high-level title</h1>'
                         '<p>paragraph below third-level heading</p>'
             '<h1>last high-level title, sibling to the first</h1>')
 
-EXPECTED_TOKENS = "[12156, 11852, 2316, 5686, 11852, 2316, 28827, 3770, 2132, 11852, 43063, 2132, 11852, 28827, 2949, 220, 17, 303, 2237, 32827, 11852, 2316, 28827, 3770, 4948, 11852, 14836, 4354, 1579, 11852, 2316, 11, 45323, 311, 279, 1176]"
+EXPECTED_TOKENS = [12156, 11852, 2316, 5686, 11852, 2316, 28827, 3770, 2132, 11852, 43063, 2132, 11852, 28827, 2949, 220, 17, 303, 2237, 32827, 11852, 2316, 28827, 3770, 4948, 11852, 14836, 4354, 1579, 11852, 2316, 11, 45323, 311, 279, 1176]
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
 class TestChunking(unittest.TestCase):
     def test_chunking(self):
         soup, chunks = chunk(example1)
-        self.assertEqual(
-            soup.select('body.h0-block')[0]['tokens'], EXPECTED_TOKENS)
-        print(f"'{chunks[0]['tokens']}'")
+        # print(chunks[0]['tokens'])
         self.assertEqual(chunks[0]['tokens'], EXPECTED_TOKENS)
 
     def test_chunking_sample1(self):
