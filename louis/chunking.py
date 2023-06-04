@@ -1,8 +1,12 @@
+"""
+This module contains functions to chunk a web page into 512 tokens chunks
+"""
 import json
-from bs4 import BeautifulSoup
 import re
 
 import tiktoken
+from bs4 import BeautifulSoup
+
 enc = tiktoken.get_encoding("cl100k_base")
 
 HEADERS_RE = re.compile('^h[1-6]$')
@@ -14,6 +18,7 @@ def compute_tokens(tag):
         text_content = tag.attrs['text_content']
         token_count = int(tag.attrs['token_count'])
         tokens = json.loads(tag.attrs['tokens'])
+        title = tag.get('title', '')
     else:
         # extract and clean up tag text content, storing it in tag
         text_content = re.sub(r'\s+', ' ', tag.get_text()).strip()
@@ -22,10 +27,12 @@ def compute_tokens(tag):
         tag.attrs['tokens'] = str(tokens)
         tag.attrs['token_count'] = str(token_count)
         tag.attrs['text_content'] = text_content
+        title = tag.get('title', '')
     return {
         'text_content': text_content,
         'tokens': tokens,
-        'token_count': token_count
+        'token_count': token_count,
+        'title': title
     }
 
 def mark_parent(tag):
@@ -44,52 +51,77 @@ def mark_parent(tag):
     # otherwise we keep going
     return mark_parent(tag.parent)
 
-find_next_parent_div = lambda t: t.find_parent(class_='blocks')
+def find_next_parent_div(tag):
+    """Find the next parent block div of a tag, recursively"""
+    return tag.find_parent(class_='blocks')
 
 def mark_processed(tag):
     """Mark a tag as processed, recursively"""
     tag.attrs['processed'] = True
     child_blocks = tag.find_all(class_='blocks')
-    for c in child_blocks:
-        c.attrs['processed'] = True
+    for child_block in child_blocks:
+        child_block.attrs['processed'] = True
 
-def split_chunk_into_subchunks(chunk, min_tokens=256, max_tokens=512):
+def estimate_best_bucket_size(total, min_tokens, max_tokens):
+    """Estimate the best bucket size for a total number of tokens"""
+    maximizing_divider = max_tokens
+    max_remainder = 0
+    for i in range(max_tokens, min_tokens, -1):
+        remainder = total % i
+        if remainder > max_remainder:
+            maximizing_divider = i
+            max_remainder = remainder
+    return maximizing_divider
+
+def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
     """some leafs might be bigger than desired. split text into smaller chunks"""
-    assert chunk['token_count'] > max_tokens
-    text_content = chunk['text_content']
+    assert large_chunk['token_count'] > max_tokens
+    text_content = large_chunk['text_content']
     sentences = text_content.split('.')
+
+    sentence_chunks = []
+    for sentence in sentences:
+        tokens = enc.encode(sentence)
+        token_count = len(tokens)
+        sentence_chunks.append({
+            'text_content': sentence,
+            'tokens': tokens,
+            'token_count': token_count,
+            'title': large_chunk.get('title', '')
+        })
+
+    # TODO: smarter sentence bin packing
+    # total_count = sum(c['token_count'] for c in sentence_chunks)
+    # target_bucket_size = estimate_best_bucket_size(total_count, min_tokens, max_tokens)
+
+    target_bucket_size = 409
     buckets = [[]]
     bucket = buckets[0]
     bucket_size = 0
-    for text_content in sentences:
-        tokens = enc.encode(text_content)
-        token_count = len(tokens)
-        if bucket_size + token_count > max_tokens:
+    for sentence_chunk in sentence_chunks:
+        if bucket_size + sentence_chunk['token_count'] >= target_bucket_size:
             # we're over the limit, we start a new bucket
             bucket = []
             buckets.append(bucket)
             bucket_size = 0
 
-        bucket.append({
-            'text_content': text_content,
-            'tokens': tokens,
-            'token_count': token_count
-        })
-        bucket_size += token_count
-    chunks = []
-    for b in buckets:
-        chunk = combine_chunks_into_single_chunk(b)
-        chunks.append(chunk)
-    return chunks
+        bucket.append(sentence_chunk)
+        bucket_size += sentence_chunk['token_count']
 
-def collect_chunks_from_tag(t, total_token_count, chunks):
+    smaller_chunks = []
+    for bucket in buckets:
+        small_chunk = combine_chunks_into_single_chunk(bucket)
+        smaller_chunks.append(small_chunk)
+    return smaller_chunks
+
+def collect_chunks_from_tag(tag, total_token_count, chunks):
     """Collect chunks of text, starting from a tag, until the total token count is at most 512"""
-    if 'processed' not in t.attrs:
-        chunk = compute_tokens(t)
+    if 'processed' not in tag.attrs:
+        chunk = compute_tokens(tag)
         prospective_total = total_token_count + int(chunk['token_count'])
         if prospective_total <= 512:
             chunks.append(chunk)
-            mark_processed(t)
+            mark_processed(tag)
         elif prospective_total > 512:
             # too big, we skip it and let next iteration handle it
             return
@@ -98,16 +130,18 @@ def collect_chunks_from_tag(t, total_token_count, chunks):
         # or more likely the next parent
         prospective_total = total_token_count
 
-    if t.next_sibling:
+    if tag.next_sibling and hasattr(tag.next_sibling, 'attrs') and 'blocks' in tag.next_sibling.attrs['class'][0]:
         # there's a sibling, let's see how much we can fit in
-        return collect_chunks_from_tag(t.next_sibling, prospective_total, chunks)
+        return collect_chunks_from_tag(tag.next_sibling, prospective_total, chunks)
     else:
         # no more siblings so we go up the tree to the parent block
         # which includes this one and all the siblings
         # so we reset chunks
-        parent_div = find_next_parent_div(t)
+        parent_div = find_next_parent_div(tag)
         if parent_div:
             parent_chunks = []
+            if 'title' not in parent_div.attrs:
+                parent_div.attrs['title'] = ";".join([c['title'] for c in chunks])
             collect_chunks_from_tag(parent_div, 0, parent_chunks)
             if len(parent_chunks) > 0:
                 chunks.clear()
@@ -121,25 +155,30 @@ def block_by_heading(soup):
     """Wrap each heading and its siblings into a div, including other heading of a higher level"""
     body = soup.select('body')[0]
     body.attrs['class'] = body.attrs.get('class', []) + ["blocks", "h0-block"]
+    if soup.title:
+        body.attrs['title'] = soup.title.text.strip()
 
     parent_div = None
 
     # https://bugs.launchpad.net/beautifulsoup/+bug/1804303
     # make a copy of the list of tags because we will be modifying the tree
-    for t in list(soup.find_all(HEADERS_RE)):
+    for tag in list(soup.find_all(HEADERS_RE)):
         # get siblings before we wrap the current tag
-        siblings = list(t.next_siblings)
+        siblings = list(tag.next_siblings)
         # we nest the current tag into a div representing the heading
-        parent_div = t.wrap(soup.new_tag(
-            "div", **{"class": f"{t.name}-block blocks"}))
+        parent_div = tag.wrap(soup.new_tag(
+            "div", **{
+                "class": f"{tag.name}-block blocks",
+                "title": tag.text.strip()
+            }))
 
         # we append every sibling to the current div up to the next heading
-        for s in siblings:
-            if s.name and re.match(HEADERS_RE, s.name):
-                if s.name[1] <= t.name[1]:
+        for sibling in siblings:
+            if sibling.name and re.match(HEADERS_RE, sibling.name):
+                if sibling.name[1] <= tag.name[1]:
                     # sibling header is of same or lower level
                     break
-            parent_div.append(s)
+            parent_div.append(sibling)
 
         # we recursively mark all the block div above as a parent block
         # any non-parent block left at the end will be a leaf
@@ -159,6 +198,11 @@ def combine_chunks_into_single_chunk(chunks):
         chunk['text_content'] += " " + next_chunk['text_content']
         chunk['tokens'] += next_chunk['tokens']
         chunk['token_count'] += next_chunk['token_count']
+
+        # this may be from a splitted chunk so we check that the title isn't already
+        # the same as what we would append
+        if next_chunk['title'] != chunk['title']:
+            chunk['title'] += " " + next_chunk['title']
         assert chunk['token_count'] <= 512
     return chunk
 
@@ -166,32 +210,31 @@ def segment_blocks_into_chunks(blocks):
     """Segment blocks into chunks of 256-512 tokens"""
     # collect chunks from leafs
     all_chunks = []
-    for t in blocks:
+    for block in blocks:
         # this chunk is a parent, we start at the leafs
-        if 'parent' in t.attrs:
+        if 'parent' in block.attrs:
             continue
         # this chunk is already taken care of
-        if 'processed' in t.attrs:
+        if 'processed' in block.attrs:
             continue
-        chunk = compute_tokens(t)
+        chunk = compute_tokens(block)
         if chunk['token_count'] <= 512:
             if chunk['token_count'] >= 256:
                 # perfect sized chunk
                 all_chunks.append(chunk)
-                mark_processed(t)
+                mark_processed(block)
             else: # < 256:
                 # chunk too small
                 chunks = []
                 # we collect siblings until we reach 256 tokens
-                collect_chunks_from_tag(t, chunk['token_count'], chunks)
+                collect_chunks_from_tag(block, chunk['token_count'], chunks)
                 chunk = combine_chunks_into_single_chunk(chunks)
                 all_chunks.append(chunk)
         else:
             # chunk too big
-            chunks = []
-            split_chunk_into_subchunks(chunk, chunks)
-            mark_processed(t)
-            all_chunks.extend(chunks)
+            subchunks = split_chunk_into_subchunks(chunk)
+            all_chunks.extend(subchunks)
+            mark_processed(block)
 
     return all_chunks
 
@@ -214,19 +257,20 @@ def chunk(html_content):
     soup.smooth()
 
     block_by_heading(soup)
-
-    chunks = segment_blocks_into_chunks(soup.select('.blocks'))
+    blocks = soup.select('.blocks')
+    chunks = segment_blocks_into_chunks(blocks)
 
     return (soup, chunks)
-
 
 
 if __name__ == '__main__':
     # open file from first parameter
     import sys
-    with open(sys.argv[1]) as f:
+    with open(sys.argv[1], encoding='UTF-8') as f:
         html = f.read()
 
     soup, chunks = chunk(html)
-    print(soup.prettify())
-    print(chunks)
+    # print(soup.prettify())
+    # print(chunks)
+    for chunk in chunks:
+        print(f"{chunk['title']}: {chunk['token_count']}")
