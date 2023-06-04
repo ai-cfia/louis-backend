@@ -15,7 +15,7 @@ stretch
 
 ## database setup
 
-We've added the devcontainer postgres feature. Config files are in 
+We've added the devcontainer postgres feature. Config files are in
 
 ```
 /home/vscode/.asdf/installs/postgres/15.3/data/*.conf
@@ -44,6 +44,15 @@ and then
 ```
 psql -d inspection.canada.ca
 ```
+
+## postgresql extensions
+
+```
+pip install pgxnclient
+pgxn install vector
+```
+
+see extensions available: https://pgxn.org/
 
 ## database client
 

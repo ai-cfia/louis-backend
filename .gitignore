@@ -161,4 +161,6 @@ cython_debug/
 
 **/*:Zone.Identifier
 Cache/
-db.dump
+**/*.dump
+**/*.pg_dump
+**/*.zip
