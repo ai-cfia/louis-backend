@@ -63,17 +63,19 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 class TestChunking(unittest.TestCase):
     def test_chunking(self):
+        """Test chunking on a simple example"""
         soup, chunks = chunk(EXAMPLE1)
-        #print(chunks)
+        # print(chunks)
         # print(chunks[0]['tokens'])
         self.assertEqual(chunks[0]["tokens"], EXPECTED_TOKENS)
         titles = [c["title"] for c in chunks]
         self.assertEqual(
             chunks[0]["title"],
-            "high-level title",
+            "high-level title;last high-level title, sibling to the first",
         )
 
     def test_chunking_sample1(self):
+        """Test chunking on a real example"""
         with open(f"{CWD}/responses/1547741756885.html", encoding="UTF-8") as f:
             html = f.read()
         soup, chunks = chunk(html)
@@ -86,6 +88,7 @@ class TestChunking(unittest.TestCase):
         # self.assertEqual(sentences, split_text)
 
     def test_chunking_sample2(self):
+        """Test chunking on a real example"""
         with open(f"{CWD}/responses/1430250287405.html", encoding="UTF-8") as f:
             html = f.read()
         soup, chunks = chunk(html)
@@ -98,12 +101,37 @@ class TestChunking(unittest.TestCase):
         # self.assertEqual(sentences, split_text)
         titles = [c["title"] for c in chunks]
         unique_titles_sorted = sorted(list(set(titles)))
-        #print(unique_titles_sorted)
-        self.assertEqual(unique_titles_sorted, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'Z', 'À retenir'])
-        #print(chunks)
-        #print(soup.prettify())
+        # print(unique_titles_sorted)
+        self.assertEqual(
+            unique_titles_sorted,
+            [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "F",
+                "G",
+                "I",
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "Q",
+                "R",
+                "S",
+                "T",
+                "V",
+                "Z",
+                "À retenir",
+            ],
+        )
+        # print(chunks)
+        # print(soup.prettify())
 
     def test_chunking_fragment2(self):
+        """Test chunking on a real example"""
         with open(f"{CWD}/responses/fragment2.html", encoding="UTF-8") as f:
             html = f.read()
         soup, chunks = chunk(html)
@@ -116,7 +144,23 @@ class TestChunking(unittest.TestCase):
         self.assertEqual(chunks[0]["title"], "Glossary")
 
     def test_block_by_heading(self):
+        """Test chunking on a real example"""
         with open(f"{CWD}/responses/wrapped.html", encoding="UTF-8") as f:
             html = f.read()
         soup = BeautifulSoup(html, "lxml")
-        chunks = segment_blocks_into_chunks(soup)
+        blocks = soup.select(".blocks")
+        chunks = segment_blocks_into_chunks(blocks)
+        self.assertEqual(
+            chunks,
+            [
+                {
+                    "text_content": "h1a h2a",
+                    "tokens": [],
+                    "token_count": 510,
+                    "title": "high-level title second-level title",
+                },
+                {"text_content": "h2b", "tokens": [], "token_count": 512, "title": "second-level title b"},
+                {"text_content": "h2c", "tokens": [], "token_count": 510, "title": "third-level title;third-level title"},
+                {"text_content": "h1a", "tokens": [], "token_count": 255, "title": "last high-level title, sibling to the first"},
+            ],
+        )

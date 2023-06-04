@@ -11,23 +11,23 @@ enc = tiktoken.get_encoding("cl100k_base")
 
 HEADERS_RE = re.compile('^h[1-6]$')
 
-def compute_tokens(tag):
-    """Compute the tokens and token count of a tag, caching the result in the tag"""
-    if 'tokens' in tag.attrs:
-        # content is cached in tag
-        text_content = tag.attrs['text_content']
-        token_count = int(tag.attrs['token_count'])
-        tokens = json.loads(tag.attrs['tokens'])
-        title = tag.get('title', '')
+def compute_tokens(block):
+    """Compute the tokens and token count of a block, caching the result in the block"""
+    if 'tokens' in block.attrs:
+        # content is cached in block
+        text_content = block.attrs['text_content']
+        token_count = int(block.attrs['token_count'])
+        tokens = json.loads(block.attrs['tokens'])
+        title = block.get('title', '')
     else:
-        # extract and clean up tag text content, storing it in tag
-        text_content = re.sub(r'\s+', ' ', tag.get_text()).strip()
+        # extract and clean up block text content, storing it in block
+        text_content = re.sub(r'\s+', ' ', block.get_text()).strip()
         tokens = enc.encode(text_content)
         token_count = len(tokens)
-        tag.attrs['tokens'] = str(tokens)
-        tag.attrs['token_count'] = str(token_count)
-        tag.attrs['text_content'] = text_content
-        title = tag.get('title', '')
+        block.attrs['tokens'] = str(tokens)
+        block.attrs['token_count'] = str(token_count)
+        block.attrs['text_content'] = text_content
+        title = block.get('title', '')
     return {
         'text_content': text_content,
         'tokens': tokens,
@@ -35,30 +35,30 @@ def compute_tokens(tag):
         'title': title
     }
 
-def mark_parent(tag):
-    """Mark the parent of a tag as a parent, recursively"""
+def mark_parent(block):
+    """Mark the parent of a block as a parent, recursively"""
     # ok, parent is already identified as parent
-    if 'parent' in tag.attrs:
+    if 'parent' in block.attrs:
         return
 
     # set parent flag
-    tag.attrs['parent'] = True
+    block.attrs['parent'] = True
 
-    # if we're at the body tag, we're done
-    if tag.name == 'body':
+    # if we're at the body block, we're done
+    if block.name == 'body':
         return
 
     # otherwise we keep going
-    return mark_parent(tag.parent)
+    return mark_parent(block.parent)
 
-def find_next_parent_div(tag):
-    """Find the next parent block div of a tag, recursively"""
-    return tag.find_parent(class_='blocks')
+def find_next_parent_div(block):
+    """Find the next parent block div of a block, recursively"""
+    return block.find_parent(class_='blocks')
 
-def mark_processed(tag):
-    """Mark a tag as processed, recursively"""
-    tag.attrs['processed'] = True
-    child_blocks = tag.find_all(class_='blocks')
+def mark_processed(block):
+    """Mark a block as processed, recursively"""
+    block.attrs['processed'] = True
+    child_blocks = block.find_all(class_='blocks')
     for child_block in child_blocks:
         child_block.attrs['processed'] = True
 
@@ -114,14 +114,17 @@ def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
         smaller_chunks.append(small_chunk)
     return smaller_chunks
 
-def collect_chunks_from_tag(tag, total_token_count, chunks):
-    """Collect chunks of text, starting from a tag, until the total token count is at most 512"""
-    if 'processed' not in tag.attrs:
-        chunk = compute_tokens(tag)
+def collect_chunks_from_block(block, total_token_count, chunks):
+    """Collect chunks of text, starting from a block, until the total token count is at most 512"""
+    if 'processed' not in block.attrs:
+        chunk = compute_tokens(block)
         prospective_total = total_token_count + int(chunk['token_count'])
         if prospective_total <= 512:
+            # this is a good chunk as-is, we add it to the list
+            # although it may be smaller than we want
             chunks.append(chunk)
-            mark_processed(tag)
+            mark_processed(block)
+            # we'll continue to see if we can add more siblings
         elif prospective_total > 512:
             # too big, we skip it and let next iteration handle it
             return
@@ -129,29 +132,26 @@ def collect_chunks_from_tag(tag, total_token_count, chunks):
         # this is already processed, nothing changes and we skip to the next sibling
         # or more likely the next parent
         prospective_total = total_token_count
-
-    if tag.next_sibling and hasattr(tag.next_sibling, 'attrs') and 'blocks' in tag.next_sibling.attrs['class'][0]:
+    sibling = block.find_next_sibling(class_='blocks')
+    if sibling:
         # there's a sibling, let's see how much we can fit in
-        return collect_chunks_from_tag(tag.next_sibling, prospective_total, chunks)
-    else:
-        # no more siblings so we go up the tree to the parent block
-        # which includes this one and all the siblings
-        # so we reset chunks
-        parent_div = find_next_parent_div(tag)
-        if parent_div:
-            parent_chunks = []
-            if 'title' not in parent_div.attrs:
-                parent_div.attrs['title'] = ";".join([c['title'] for c in chunks])
-            collect_chunks_from_tag(parent_div, 0, parent_chunks)
-            if len(parent_chunks) > 0:
-                chunks.clear()
-                chunks.extend(parent_chunks)
-            return
-        else:
-            # we're at the top of the tree
-            return
+        return collect_chunks_from_block(sibling, prospective_total, chunks)
 
-def block_by_heading(soup):
+    # no more siblings so we go up the tree to the parent block
+    # which includes this one and all the siblings
+    # if successful, we reset chunks to the parent chunks
+    parent_div = find_next_parent_div(block)
+    if parent_div:
+        parent_chunks = []
+        if 'title' not in parent_div.attrs:
+            parent_div.attrs['title'] = ";".join([c['title'] for c in chunks])
+        collect_chunks_from_block(parent_div, 0, parent_chunks)
+        if len(parent_chunks) > 0:
+            chunks.clear()
+            chunks.extend(parent_chunks)
+    return
+
+def group_heading_by_block(soup):
     """Wrap each heading and its siblings into a div, including other heading of a higher level"""
     body = soup.select('body')[0]
     body.attrs['class'] = body.attrs.get('class', []) + ["blocks", "h0-block"]
@@ -161,21 +161,21 @@ def block_by_heading(soup):
     parent_div = None
 
     # https://bugs.launchpad.net/beautifulsoup/+bug/1804303
-    # make a copy of the list of tags because we will be modifying the tree
-    for tag in list(soup.find_all(HEADERS_RE)):
-        # get siblings before we wrap the current tag
-        siblings = list(tag.next_siblings)
-        # we nest the current tag into a div representing the heading
-        parent_div = tag.wrap(soup.new_tag(
+    # make a copy of the list of blocks because we will be modifying the tree
+    for block in list(soup.find_all(HEADERS_RE)):
+        # get siblings before we wrap the current block
+        siblings = list(block.next_siblings)
+        # we nest the current block into a div representing the heading
+        parent_div = block.wrap(soup.new_tag(
             "div", **{
-                "class": f"{tag.name}-block blocks",
-                "title": tag.text.strip()
+                "class": f"{block.name}-block blocks",
+                "title": block.text.strip()
             }))
 
         # we append every sibling to the current div up to the next heading
         for sibling in siblings:
             if sibling.name and re.match(HEADERS_RE, sibling.name):
-                if sibling.name[1] <= tag.name[1]:
+                if sibling.name[1] <= block.name[1]:
                     # sibling header is of same or lower level
                     break
             parent_div.append(sibling)
@@ -227,7 +227,7 @@ def segment_blocks_into_chunks(blocks):
                 # chunk too small
                 chunks = []
                 # we collect siblings until we reach 256 tokens
-                collect_chunks_from_tag(block, chunk['token_count'], chunks)
+                collect_chunks_from_block(block, 0, chunks)
                 chunk = combine_chunks_into_single_chunk(chunks)
                 all_chunks.append(chunk)
         else:
@@ -253,10 +253,10 @@ def chunk(html_content):
 
     soup = BeautifulSoup(html_content, "lxml")
 
-    # make sure html fragments are wrapped in html and body tags
+    # make sure html fragments are wrapped in html and body blocks
     soup.smooth()
 
-    block_by_heading(soup)
+    group_heading_by_block(soup)
     blocks = soup.select('.blocks')
     chunks = segment_blocks_into_chunks(blocks)
 
