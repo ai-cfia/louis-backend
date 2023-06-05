@@ -81,8 +81,7 @@ class TestChunking(unittest.TestCase):
 
     def test_chunking_sample1(self):
         """Test chunking on a real example"""
-        with open(f"{CWD}/responses/1547741756885.html", encoding="UTF-8") as f:
-            html = f.read()
+        html = get_html("1547741756885")
         soup, chunks = chunk_html(html)
         # sentences = []
         # text_content = ''
@@ -94,8 +93,7 @@ class TestChunking(unittest.TestCase):
 
     def test_chunking_sample2(self):
         """Test chunking on a real example"""
-        with open(f"{CWD}/responses/1430250287405.html", encoding="UTF-8") as f:
-            html = f.read()
+        html = get_html("1430250287405")
         soup, chunks = chunk_html(html)
         # sentences = soup.get_text(strip=True).split('.')
         # text_content = ''
@@ -137,8 +135,7 @@ class TestChunking(unittest.TestCase):
 
     def test_chunking_fragment2(self):
         """Test chunking on a real example"""
-        with open(f"{CWD}/responses/fragment2.html", encoding="UTF-8") as f:
-            html = f.read()
+        html = get_html("fragment2")
         soup, chunks = chunk_html(html)
         # print(soup.prettify())
         # print(chunks)
@@ -150,8 +147,7 @@ class TestChunking(unittest.TestCase):
 
     def test_block_by_heading(self):
         """Test chunking on a real example"""
-        with open(f"{CWD}/responses/wrapped.html", encoding="UTF-8") as f:
-            html = f.read()
+        html = get_html("wrapped")
         soup = BeautifulSoup(html, "lxml")
         blocks = soup.select(".blocks")
         chunks = segment_blocks_into_chunks(blocks)
