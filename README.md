@@ -13,6 +13,29 @@ stretch
 
 * build indexing-on-request API (can accept, queue and process external links)
 
+## running the crawlers
+
+We use the crawlers in a little bit of a non-standard way.
+
+Instead of hitting a website, we pick up the URL from disk
+
+As a second step, we pick up rows from the database
+
+As a third step, we pick up rows from the database to pass to the embedding API
+
+goldie crawler: HTML from disk dump in Cache/:
+
+```
+scrapy crawl goldie --logfile goldie.log
+```
+
+hawn crawler: crawl table to chunk and token:
+
+```
+scrapy crawl hawn --logfile hawn.log
+```
+
+
 ## database setup
 
 We've added the devcontainer postgres feature. Config files are in

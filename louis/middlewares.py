@@ -4,6 +4,8 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 import psycopg2
+import psycopg2.extras
+
 from scrapy import signals
 from scrapy.exceptions import IgnoreRequest
 from scrapy.selector import Selector
@@ -83,12 +85,11 @@ class LouisDownloaderMiddleware:
             parsed = urlparse(request.url)
             return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
         elif spider.name == 'hawn':
-            self.cursor = self.connection.cursor()
-            with self.connection.cursor() as cursor:
+            with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
                 cursor.execute("SELECT * FROM public.crawl WHERE url = %s", (request.url,))
-                row = self.cursor.fetchone()
+                row = cursor.fetchone()
                 return fake_response_from_row(row, request.url)
-    
+
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
 

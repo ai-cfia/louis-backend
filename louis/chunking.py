@@ -49,7 +49,10 @@ def mark_parent(block):
         return
 
     # otherwise we keep going
-    return mark_parent(block.parent)
+    if block.parent:
+        return mark_parent(block.parent)
+
+    return
 
 def find_next_parent_div(block):
     """Find the next parent block div of a block, recursively"""
@@ -160,8 +163,12 @@ def group_heading_by_block(soup):
 
     parent_div = None
 
-    # https://bugs.launchpad.net/beautifulsoup/+bug/1804303
-    # make a copy of the list of blocks because we will be modifying the tree
+    # we unwrap additional tags around headers where the header is alone in the wrapping tag
+    for block in list(soup.find_all(HEADERS_RE)):
+        if not HEADERS_RE.match(block.parent.name) and len(block.find_next_siblings()) == 0:
+            # example of this is a <summary><h1>...</h1></summary>
+            block.parent.unwrap()
+
     for block in list(soup.find_all(HEADERS_RE)):
         # get siblings before we wrap the current block
         siblings = list(block.next_siblings)
@@ -195,14 +202,14 @@ def combine_chunks_into_single_chunk(chunks):
 
     chunk = chunks[0]
     for next_chunk in chunks[1:]:
-        chunk['text_content'] += " " + next_chunk['text_content']
+        chunk['text_content'] += "\n" + next_chunk['text_content']
         chunk['tokens'] += next_chunk['tokens']
         chunk['token_count'] += next_chunk['token_count']
 
         # this may be from a splitted chunk so we check that the title isn't already
         # the same as what we would append
         if next_chunk['title'] != chunk['title']:
-            chunk['title'] += " " + next_chunk['title']
+            chunk['title'] += ";" + next_chunk['title']
         assert chunk['token_count'] <= 512
     return chunk
 
@@ -238,7 +245,7 @@ def segment_blocks_into_chunks(blocks):
 
     return all_chunks
 
-def chunk(html_content):
+def chunk_html(html_content):
     """Chunk an HTML document into a list of chunks.
 
      chunks are made up of a title, and a body (which is a list of subheadings and paragraphs)
@@ -250,7 +257,7 @@ def chunk(html_content):
     """
     # chunks are organized by headings in a graph
     # we organize leaf nodes contents into chunks
-
+    html_content = html_content.replace('\n', ' ')
     soup = BeautifulSoup(html_content, "lxml")
 
     # make sure html fragments are wrapped in html and body blocks
@@ -269,7 +276,7 @@ if __name__ == '__main__':
     with open(sys.argv[1], encoding='UTF-8') as f:
         html = f.read()
 
-    soup, chunks = chunk(html)
+    soup, chunks = chunk_html(html)
     # print(soup.prettify())
     # print(chunks)
     for chunk in chunks:

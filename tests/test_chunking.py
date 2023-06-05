@@ -5,9 +5,10 @@ import unittest
 
 from bs4 import BeautifulSoup
 
-from louis.chunking import segment_blocks_into_chunks, chunk
+from louis.chunking import segment_blocks_into_chunks, chunk_html
 
 EXAMPLE1 = (
+    "<html><body>"
     "<h1>high-level title</h1>"
     "<h2>second-level title</h2>"
     "<p>paragraph below second-level</p>"
@@ -16,6 +17,7 @@ EXAMPLE1 = (
     "<h3>third-level title</h3>"
     "<p>paragraph below third-level heading</p>"
     "<h1>last high-level title, sibling to the first</h1>"
+    "</html></body>"
 )
 
 
@@ -60,11 +62,14 @@ EXPECTED_TOKENS = [
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
+def get_html(filename):
+    with open(f"{CWD}/responses/{filename}.html", encoding="UTF-8") as f:
+        return f.read()
 
 class TestChunking(unittest.TestCase):
     def test_chunking(self):
         """Test chunking on a simple example"""
-        soup, chunks = chunk(EXAMPLE1)
+        soup, chunks = chunk_html(EXAMPLE1)
         # print(chunks)
         # print(chunks[0]['tokens'])
         self.assertEqual(chunks[0]["tokens"], EXPECTED_TOKENS)
@@ -78,7 +83,7 @@ class TestChunking(unittest.TestCase):
         """Test chunking on a real example"""
         with open(f"{CWD}/responses/1547741756885.html", encoding="UTF-8") as f:
             html = f.read()
-        soup, chunks = chunk(html)
+        soup, chunks = chunk_html(html)
         # sentences = []
         # text_content = ''
         # for c in chunks:
@@ -91,7 +96,7 @@ class TestChunking(unittest.TestCase):
         """Test chunking on a real example"""
         with open(f"{CWD}/responses/1430250287405.html", encoding="UTF-8") as f:
             html = f.read()
-        soup, chunks = chunk(html)
+        soup, chunks = chunk_html(html)
         # sentences = soup.get_text(strip=True).split('.')
         # text_content = ''
         # for c in chunks:
@@ -134,7 +139,7 @@ class TestChunking(unittest.TestCase):
         """Test chunking on a real example"""
         with open(f"{CWD}/responses/fragment2.html", encoding="UTF-8") as f:
             html = f.read()
-        soup, chunks = chunk(html)
+        soup, chunks = chunk_html(html)
         # print(soup.prettify())
         # print(chunks)
         self.assertEqual(
@@ -154,13 +159,19 @@ class TestChunking(unittest.TestCase):
             chunks,
             [
                 {
-                    "text_content": "h1a h2a",
+                    "text_content": "h1a\nh2a",
                     "tokens": [],
                     "token_count": 510,
-                    "title": "high-level title second-level title",
+                    "title": "high-level title;second-level title",
                 },
                 {"text_content": "h2b", "tokens": [], "token_count": 512, "title": "second-level title b"},
                 {"text_content": "h2c", "tokens": [], "token_count": 510, "title": "third-level title;third-level title"},
                 {"text_content": "h1a", "tokens": [], "token_count": 255, "title": "last high-level title, sibling to the first"},
             ],
         )
+
+    def test_chunking_with_summary_details_block(self):
+        html = get_html("1648871138011")
+        soup, chunks = chunk_html(html)
+        for c in chunks:
+            self.assertTrue(c["token_count"] > 32, f"{c['text_content']} is too short")
