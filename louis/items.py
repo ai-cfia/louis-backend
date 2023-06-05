@@ -18,9 +18,9 @@ class CrawlItem(scrapy.Item):
 class ChunkItem(scrapy.Item):
     url = scrapy.Field()
     title = scrapy.Field()
-    subtitle = scrapy.Field()
     text_content = scrapy.Field()
-    urls = scrapy.Field()
+    token_count = scrapy.Field()
+    tokens = scrapy.Field()
 
 class EmbeddingItem(scrapy.Item):
     chunk_id = scrapy.Field()

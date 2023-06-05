@@ -15,3 +15,8 @@ def extract_urls(response, parse):
             parsed = urlparse(response.url)
             href = parsed.scheme + "://" + parsed.netloc + href
             yield scrapy.Request(href, parse)
+
+def fix_vhost(url):
+    url = url.replace('https://inspection.gc.ca', 'http://inspection.canada.ca')
+    url = url.replace('https://www.inspection.gc.ca', 'http://inspection.canada.ca')
+    return url

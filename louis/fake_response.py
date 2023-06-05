@@ -42,8 +42,8 @@ def fake_response_from_row(row, url):
     """
     request = Request(url=url)
     if not row['html_content']:
-        return Response(url=url, status=404, request=request)    
-  
+        return Response(url=url, status=404, request=request)
+
     response = HtmlResponse(url=url,
         request=request,
         body=row['html_content'],

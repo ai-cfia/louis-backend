@@ -4,19 +4,20 @@ import scrapy
 from bs4 import BeautifulSoup, Comment
 
 from louis.items import CrawlItem
-from louis.requests import extract_urls
+from louis.requests import extract_urls, fix_vhost
+
 
 def convert_to_crawl_item(response):
     title = " ".join([t.get() for t in response.xpath("//title/text()")])
     title = re.sub(r'\s+', ' ', title).strip()
     last_updated =  response.xpath("//time/text()").get()
     content = clean(response)
-    url = response.url
+    url = fix_vhost(response.url)
     now = int(time.time())
     lang = 'en'
     if url.find('/fra/') != -1:
         lang = 'fr'
-    
+
     yield CrawlItem({
         'url': url,
         'title': title,
@@ -32,6 +33,7 @@ def clean(response):
     main.css('.pagedetails').drop()
     main.css('script').drop()
     main.css('.nojs-hide').drop()
+    main.css('.alert').drop()
     soup = BeautifulSoup(main.get(), "lxml")
     # remove comments
     [c.extract() for c in soup.findAll(string=lambda text:isinstance(text, Comment))]
