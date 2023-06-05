@@ -257,7 +257,7 @@ def chunk_html(html_content):
     """
     # chunks are organized by headings in a graph
     # we organize leaf nodes contents into chunks
-    html_content = html_content.replace('\n', ' ')
+    # html_content = html_content.replace('\n', ' ')
     soup = BeautifulSoup(html_content, "lxml")
 
     # make sure html fragments are wrapped in html and body blocks
