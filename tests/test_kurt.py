@@ -1,6 +1,5 @@
 """Test the Kurt spider"""
 import unittest
-import os
 
 from louis.spiders.kurt import KurtSpider
 
