@@ -7,12 +7,12 @@
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 
-from louis.db import process_chunk_item, process_crawl_item, connect_db, process_embedding_item
+import louis.db as db
 
 class LouisPipeline:
     def open_spider(self, spider):
         # open connection to postgresql database using psycopg2
-        self.connection = connect_db()
+        self.connection = db.connect_db()
 
     def close_spider(self, spider):
         # close connection to postgresql database using psycopg2
@@ -22,10 +22,10 @@ class LouisPipeline:
         adapter = ItemAdapter(item)
         if 'html_content' in adapter:
             with self.connection.cursor() as cursor:
-                return process_crawl_item(cursor, item)
+                return db.store_crawl_item(cursor, item)
         elif 'text_content' in adapter:
             with self.connection.cursor() as cursor:
-                return process_chunk_item(cursor, item)
+                return db.store_chunk_item(cursor, item)
         elif 'embedding' in adapter:
             with self.connection.cursor() as cursor:
-                return process_embedding_item(cursor, item)
+                return db.store_embedding_item(cursor, item)

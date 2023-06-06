@@ -1,4 +1,28 @@
-# inspection.gc.ca crawler
+# inspection.canada.ca crawler
+
+## Overview
+
+We use scrapy as a generic job queue processing facility from crawling pages (from a live connection of a cached disk version) to processing rows of data in the database. The architecture and multiprocessing facilities let us organize the code and scrapy offer a number of builtin services to monitor and manage long job queues.
+
+Flows as follow:
+
+* spider (such as louis/spiders/kurt.py) is instantiated and start_requests is called
+  * start_request generates a series of requests (possibly from rows in the db) bound for a method of spider (parse)
+* requests are handled by louis/middleware.py
+  * the content for each request is fetched from a web server, filesystem or database
+  * the content is turned into a response
+* responses are sent back to the spider. The spider generates Item from the responses
+* items are received by the louis/pipeline.py
+  * items are store in the database
+
+Layers:
+
+* louis/db.py: any interaction with the postgresql database is done here
+* louis/requests.py: creation of requests here
+* louis/responses.py: creation of responses here
+* louis/settings.py: configuration of the crawler. reads from .env
+* louis/chunking.py: chunking logic
+* louis/openai.py: openai API interactions
 
 ## planned functionality
 
