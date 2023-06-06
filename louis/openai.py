@@ -1,5 +1,5 @@
+""""Fetch embeddings from the Microsoft Azure OpenAI API"""
 import os
-
 import openai
 
 
