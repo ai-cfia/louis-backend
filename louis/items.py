@@ -7,6 +7,7 @@ import scrapy
 
 
 class CrawlItem(scrapy.Item):
+    """Item for storing crawl data"""
     id = scrapy.Field()
     url = scrapy.Field()
     title = scrapy.Field()
@@ -16,6 +17,7 @@ class CrawlItem(scrapy.Item):
     last_updated = scrapy.Field()
 
 class ChunkItem(scrapy.Item):
+    """Item for storing chunk data"""
     url = scrapy.Field()
     title = scrapy.Field()
     text_content = scrapy.Field()
@@ -23,6 +25,7 @@ class ChunkItem(scrapy.Item):
     tokens = scrapy.Field()
 
 class EmbeddingItem(scrapy.Item):
-    chunk_id = scrapy.Field()
+    """Item for storing embedding data"""
+    token_id = scrapy.Field()
     embedding = scrapy.Field()
     embedding_model = scrapy.Field()

@@ -2,7 +2,7 @@ import unittest
 
 from scrapy import Request
 from bs4 import BeautifulSoup
-from louis.fake_response import fake_response_from_file
+from louis.responses import fake_response_from_file
 from louis.spiders.goldie import GoldieSpider
 
 # get directory of this file

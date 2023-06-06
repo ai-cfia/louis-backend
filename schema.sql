@@ -15,8 +15,8 @@ create table if not exists public.crawl (
 
 create table if not exists public.link (
 	source_crawl_id uuid references public.crawl(id),
-	destination_crawl_id uuid references public.crawl(id)
-	primary key(source_crawl_id, destination_crawl_id),
+	destination_crawl_id uuid references public.crawl(id),
+	primary key(source_crawl_id, destination_crawl_id)
 );
 
 create table if not exists public.chunk (
@@ -42,7 +42,7 @@ create table if not exists public."text-embedding-ada-002" (
 	token_id uuid references public.token(id),
 	embedding vector(1536),
 	primary key(id),
-	unique(embedding)
+	unique(token_id)
 );
 
 drop view documents;

@@ -80,18 +80,19 @@ class LouisDownloaderMiddleware:
         if spider.name == 'goldie':
             parsed = urlparse(request.url)
             if 'Referer' in request.headers:
-                with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                with db.cursor(self.connection) as cursor:
                     source_url = request.headers['Referer'].decode('utf-8')
                     destination_url = request.url
                     db.link_pages(cursor, source_url, destination_url)
             return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
-        elif spider.name == 'hawn':
-            with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+
+        if spider.name == 'hawn':
+            with db.cursor(self.connection) as cursor:
                 row = db.fetch_crawl_row(cursor, request.url)
                 return response_from_crawl(row, request.url)
-        elif spider.name == 'kurt':
-            with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                row = db.fetch_chunk_token(cursor, request.url.split('/')[-1])
+        if spider.name == 'kurt':
+            with db.cursor(self.connection) as cursor:
+                row = db.fetch_chunk_token_row(cursor, request.url.split('/')[-1])
                 return response_from_chunk_token(row, request.url)
 
     def process_response(self, request, response, spider):

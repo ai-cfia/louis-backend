@@ -10,22 +10,22 @@ from itemadapter import ItemAdapter
 import louis.db as db
 
 class LouisPipeline:
-    def open_spider(self, spider):
-        # open connection to postgresql database using psycopg2
+    def open_spider(self, _spider):
+        """open connection to the database"""
         self.connection = db.connect_db()
 
-    def close_spider(self, spider):
-        # close connection to postgresql database using psycopg2
+    def close_spider(self, _spider):
+        """close connection to database"""
         self.connection.close()
 
     def process_item(self, item, spider):
-        adapter = ItemAdapter(item)
-        if 'html_content' in adapter:
+        """process item and store in database"""
+        if spider.name == 'goldie':
             with self.connection.cursor() as cursor:
                 return db.store_crawl_item(cursor, item)
-        elif 'text_content' in adapter:
+        elif spider.name == 'hawn':
             with self.connection.cursor() as cursor:
                 return db.store_chunk_item(cursor, item)
-        elif 'embedding' in adapter:
+        elif spider.name == 'kurt':
             with self.connection.cursor() as cursor:
                 return db.store_embedding_item(cursor, item)
