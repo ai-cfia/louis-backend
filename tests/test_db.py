@@ -6,6 +6,16 @@ import louis.db as db
 
 import uuid
 
+embedding_table = """
+create table if not exists public."{embedding_model}" (
+	id uuid default uuid_generate_v4 (),
+	token_id uuid references public.token(id),
+	embedding vector(1536),
+	primary key(id),
+	unique(token_id)
+);
+"""
+
 class TestDB(unittest.TestCase):
     """Test the database functions"""
     def setUp(self):
@@ -83,3 +93,10 @@ class TestDB(unittest.TestCase):
             row = db.fetch_chunk_token_row(cursor, "5f3f01f1-0772-43a0-94b8-8547651a3562")
             self.connection.rollback()
         self.assertEqual(row['url'], "https://inspection.canada.ca/splash")
+
+    def test_fetch_chunk_id_without_embedding(self):
+        """sample test to check if fetch_chunk_id_without_embedding works"""
+        with db.cursor(self.connection) as cursor:
+            cursor.execute(embedding_table.format(embedding_model='test-model'))
+            rows = db.fetch_chunk_id_without_embedding(cursor, 'test-model')
+            self.connection.rollback()

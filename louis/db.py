@@ -130,16 +130,15 @@ def fetch_links(cursor, url):
     data['destination_urls'] = [r[0] for r in cursor.fetchall()]
     return data['destination_urls']
 
-def fetch_chunk_id_without_embedding(cursor):
+def fetch_chunk_id_without_embedding(cursor, embedding_model='text-embedding-ada-002'):
     """Fetch all chunk ids without an embedding."""
-    cursor.execute(
+    query = sql.SQL(
         "SELECT chunk_id FROM public.chunk"
         " JOIN public.token ON public.chunk.id = public.token.chunk_id"
-        " LEFT JOIN public.embedding ON public.chunk_token.id = public.embedding.chunk_id"
-        " WHERE public.embedding.embedding_model = 'cl100k_base'"
-        " AND public.embedding.embedding IS NULL"
-        " ORDER BY public.chunk_token.id"
-    )
+        " LEFT JOIN public.{embedding_model} ON public.token.id = public.{embedding_model}.token_id"
+        " WHERE public.{embedding_model}.embedding IS NULL"
+    ).format(embedding_model=sql.Identifier(embedding_model)).as_string(cursor)
+    cursor.execute(query)
     return cursor.fetchall()
 
 def fetch_crawl_row(cursor, url):
