@@ -28,6 +28,7 @@ def convert_to_crawl_item(response):
     })
 
 def clean(response):
+    """drop extraneous content from the page"""
     main = response.css('main')
     main.css('aside').drop()
     main.css('.pagedetails').drop()
@@ -36,11 +37,12 @@ def clean(response):
     main.css('.alert').drop()
     soup = BeautifulSoup(main.get(), "lxml")
     # remove comments
-    [c.extract() for c in soup.findAll(string=lambda text:isinstance(text, Comment))]
+    _ignored = [c.extract() for c in soup.findAll(string=lambda text:isinstance(text, Comment))]
     content = str(soup)
     return re.sub(r'\s+', ' ', content).strip()
 
 class GoldieSpider(scrapy.Spider):
+    """crawl through the page, extracting chunks and urls"""
     name = "goldie"
     allowed_domains = ["inspection.gc.ca", "inspection.canada.ca"]
     start_urls = ["https://inspection.canada.ca/splash"]

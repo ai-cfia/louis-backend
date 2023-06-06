@@ -13,6 +13,12 @@ create table if not exists public.crawl (
 	unique(url, last_updated)
 );
 
+create table if not exists public.link (
+	source_crawl_id uuid references public.crawl(id),
+	destination_crawl_id uuid references public.crawl(id)
+	primary key(source_crawl_id, destination_crawl_id),
+);
+
 create table if not exists public.chunk (
 	id uuid default uuid_generate_v4 (),
 	crawl_id uuid references public.crawl(id),
@@ -42,12 +48,12 @@ create table if not exists public."text-embedding-ada-002" (
 drop view documents;
 
 create view documents as(
-	select 
+	select
 		crawl.id as id,
-		crawl.url as url, 
-		crawl.html_content as html_content, 
+		crawl.url as url,
+		crawl.html_content as html_content,
 		crawl.title as title,
-		chunk.title as subtitle, 
+		chunk.title as subtitle,
 		chunk.text_content as content,
 		embedding.embedding as embedding
 	from crawl, chunk, token, "text-embedding-ada-002" as embedding
