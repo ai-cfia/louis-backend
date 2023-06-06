@@ -25,7 +25,7 @@ class KurtSpider(scrapy.Spider):
     def __init__(self, category=None, *args, **kwargs):
         super(KurtSpider, self).__init__(*args, **kwargs)
         self.connection = connect_db()
-        self.dbname = self.connection.info['dbname']
+        self.dbname = self.connection.info.dbname
 
     def start_requests(self):
         with self.connection.cursor() as cursor:
