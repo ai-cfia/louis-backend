@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from louis.responses import fake_response_from_file, response_from_crawl, response_from_chunk_token
 
-from louis.db import connect_db, link_pages
+import louis.db as db
 
 class LouisSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -67,7 +67,7 @@ class LouisDownloaderMiddleware:
     # passed objects.
     def __init__(self) -> None:
         # open connection to database
-        self.connection = connect_db()
+        self.connection = db.connect_db()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -81,17 +81,17 @@ class LouisDownloaderMiddleware:
             parsed = urlparse(request.url)
             if 'Referer' in request.headers:
                 with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                    link_pages(request.url, request.headers['Referer'].decode('utf-8'))
+                    source_url = request.headers['Referer'].decode('utf-8')
+                    destination_url = request.url
+                    db.link_pages(cursor, source_url, destination_url)
             return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
         elif spider.name == 'hawn':
             with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                cursor.execute("SELECT * FROM public.crawl WHERE url = %s", (request.url,))
-                row = cursor.fetchone()
+                row = db.fetch_crawl_row(cursor, request.url)
                 return response_from_crawl(row, request.url)
         elif spider.name == 'kurt':
             with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                cursor.execute("SELECT * FROM public.chunk_token WHERE url = %s", (request.url,))
-                row = cursor.fetchone()
+                row = db.fetch_chunk_token(cursor, request.url.split('/')[-1])
                 return response_from_chunk_token(row, request.url)
 
     def process_response(self, request, response, spider):

@@ -62,8 +62,8 @@ def response_from_chunk_token(row, url):
     if not row['tokens']:
         return Response(url=url, status=404, request=request)
 
-    response = HtmlResponse(url=url,
+    response = TextResponse(url=url,
         request=request,
-        body=row['tokens'],
+        body=json.dumps(row),
         encoding='utf-8')
     return response
