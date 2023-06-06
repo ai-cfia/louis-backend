@@ -1,9 +1,11 @@
 # https://stackoverflow.com/questions/6456304/scrapy-unit-testing
 
+import json
 import os
 
 from scrapy.http import HtmlResponse, Request
 from scrapy.http.response import Response
+from scrapy.http.response.text import TextResponse
 
 def fake_response_from_file(file_name, url):
     """
@@ -62,7 +64,8 @@ def response_from_chunk_token(row, url):
     if not row['tokens']:
         return Response(url=url, status=404, request=request)
 
-    response = TextResponse(url=url,
+    response = TextResponse(
+        url=url,
         request=request,
         body=json.dumps(row),
         encoding='utf-8')
