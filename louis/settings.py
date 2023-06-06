@@ -1,3 +1,8 @@
+import os
+import dotenv
+
+dotenv.load_dotenv()
+
 # Scrapy settings for louis project
 #
 # For simplicity, this file contains only settings considered important or

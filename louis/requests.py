@@ -9,12 +9,15 @@ def extract_urls(response, parse):
         href = href.split('#')[0]
         href = href.split('?')[0]
         if href.startswith('http'):
-            yield scrapy.Request(href, parse)
-        if href.startswith('/'):
+            pass
+        elif href.startswith('/'):
             # add relative url to full domain
             parsed = urlparse(response.url)
             href = parsed.scheme + "://" + parsed.netloc + href
-            yield scrapy.Request(href, parse)
+        else:
+            continue
+        href = fix_vhost(href)
+        yield scrapy.Request(href, parse, headers={'Referer': response.url})
 
 def fix_vhost(url):
     url = url.replace('https://inspection.gc.ca', 'http://inspection.canada.ca')

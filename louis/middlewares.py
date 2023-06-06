@@ -7,16 +7,12 @@ import psycopg2
 import psycopg2.extras
 
 from scrapy import signals
-from scrapy.exceptions import IgnoreRequest
-from scrapy.selector import Selector
-from louis.requests import extract_urls
-
-# useful for handling different item types with a single interface
-from itemadapter import is_item, ItemAdapter
 
 from urllib.parse import urlparse
 
-from louis.fake_response import fake_response_from_file, fake_response_from_row
+from louis.responses import fake_response_from_file, response_from_crawl, response_from_chunk_token
+
+from louis.db import connect_db, link_pages
 
 class LouisSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -71,7 +67,7 @@ class LouisDownloaderMiddleware:
     # passed objects.
     def __init__(self) -> None:
         # open connection to database
-        self.connection = psycopg2.connect(database="inspection.canada.ca")
+        self.connection = connect_db()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -83,12 +79,20 @@ class LouisDownloaderMiddleware:
     def process_request(self, request, spider):
         if spider.name == 'goldie':
             parsed = urlparse(request.url)
+            if 'Referer' in request.headers:
+                with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                    link_pages(request.url, request.headers['Referer'].decode('utf-8'))
             return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
         elif spider.name == 'hawn':
             with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
                 cursor.execute("SELECT * FROM public.crawl WHERE url = %s", (request.url,))
                 row = cursor.fetchone()
-                return fake_response_from_row(row, request.url)
+                return response_from_crawl(row, request.url)
+        elif spider.name == 'kurt':
+            with self.connection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                cursor.execute("SELECT * FROM public.chunk_token WHERE url = %s", (request.url,))
+                row = cursor.fetchone()
+                return response_from_chunk_token(row, request.url)
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
