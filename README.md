@@ -59,6 +59,12 @@ hawn crawler: crawl table to chunk and token:
 scrapy crawl hawn --logfile hawn.log
 ```
 
+kurt crawler: crawl tokens to embedding
+
+```
+scrapy crawl kurt --logfile kurt.log
+```
+
 
 ## database setup
 

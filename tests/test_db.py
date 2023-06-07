@@ -100,3 +100,17 @@ class TestDB(unittest.TestCase):
             cursor.execute(embedding_table.format(embedding_model='test-model'))
             rows = db.fetch_chunk_id_without_embedding(cursor, 'test-model')
             self.connection.rollback()
+
+    def test_create_postgresql_url(self):
+        """sample test to check if create_parse_postgresql_url works"""
+        entity_uuid = '5cef886d-8408-4868-9a69-0f0ca2167941'
+        url = db.create_postgresql_url(
+            "inspection.canada.ca",
+            "chunk", entity_uuid,
+            {'encoding': 'cl100k_base'})
+        self.assertEqual(url, f"postgresql://inspection.canada.ca/public/chunk/{entity_uuid}?encoding=cl100k_base")
+        parsed = db.parse_postgresql_url(url)
+        self.assertEqual(parsed['dbname'], "inspection.canada.ca")
+        self.assertEqual(parsed['tablename'], "chunk")
+        self.assertEqual(parsed['entity_uuid'], entity_uuid)
+        self.assertEqual(parsed['parameters']['encoding'][0], "cl100k_base")

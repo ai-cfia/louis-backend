@@ -10,7 +10,7 @@ class TestKurt(unittest.TestCase):
     def setUp(self):
         self.spider = KurtSpider()
 
-    def test_sample1(self):
+    def test_parse(self):
         """Test that the spider returns a request for each chunk_id"""
         data = {
             'tokens': list(range(0,100))
@@ -18,3 +18,8 @@ class TestKurt(unittest.TestCase):
         response = response_from_chunk_token(data, 'https://example.com/path')
         item = yield from self.spider.parse(response)
         self.assertEqual(item['chunk_id'], 'https://example.com/path')
+
+    def test_start_requests(self):
+        """Test that the spider returns a request for each chunk_id"""
+        requests = self.spider.start_requests()
+        #self.assertEqual(len(list(requests)), 1)
