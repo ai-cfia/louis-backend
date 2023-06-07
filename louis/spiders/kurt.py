@@ -1,10 +1,11 @@
+"""Spider that fetches chunk tokens from the Kurt API and converts them to embedding items"""
+
 import scrapy
-import json
 
 from louis.items import EmbeddingItem
 from louis.openai import fetch_embedding
 
-from louis.db import fetch_links, connect_db, fetch_chunk_id_without_embedding
+import louis.db as db
 
 def convert_to_embedding_items(response):
     chunk_token = response.json()
@@ -24,14 +25,14 @@ class KurtSpider(scrapy.Spider):
 
     def __init__(self, category=None, *args, **kwargs):
         super(KurtSpider, self).__init__(*args, **kwargs)
-        self.connection = connect_db()
+        self.connection = db.connect_db()
         self.dbname = self.connection.info.dbname
 
     def start_requests(self):
-        with self.connection.cursor() as cursor:
-            chunk_ids = fetch_chunk_id_without_embedding(cursor)
+        with db.cursor(self.connection) as cursor:
+            chunk_ids = db.fetch_chunk_id_without_embedding(cursor)
         for chunk_id in chunk_ids:
-            url = f'postgresql://{self.dbname}/public/chunk_token_cl100k_base/{chunk_id}'
+            url = db.create_postgresql_url(self.dbname, 'chunk', chunk_id, {'encoding': 'cl100k_base'})
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):

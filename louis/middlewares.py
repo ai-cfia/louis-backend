@@ -92,7 +92,7 @@ class LouisDownloaderMiddleware:
                 return response_from_crawl(row, request.url)
         if spider.name == 'kurt':
             with db.cursor(self.connection) as cursor:
-                row = db.fetch_chunk_token_row(cursor, request.url.split('/')[-1])
+                row = db.fetch_chunk_token_row(cursor, request.url)
                 return response_from_chunk_token(row, request.url)
 
     def process_response(self, request, response, spider):

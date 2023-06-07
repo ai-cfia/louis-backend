@@ -3,6 +3,7 @@
 import psycopg2
 import psycopg2.extras
 import psycopg2.sql as sql
+import urllib
 
 def connect_db():
     """Connect to the postgresql database and return the connection."""
@@ -152,16 +153,17 @@ def fetch_crawl_row(cursor, url):
     )
     return cursor.fetchone()
 
-def fetch_chunk_token_row(cursor, chunk_id):
+def fetch_chunk_token_row(cursor, url):
     """Fetch the most recent chunk token for a given chunk id."""
-    data = {
-        'chunk_id': chunk_id
-    }
+
+    # TODO: eventually we could generalize the use of these postgresql
+    # url to data but for now keep it simple
+    data = parse_postgresql_url(url)
     cursor.execute(
         "SELECT * FROM public.chunk"
         " JOIN public.token ON public.chunk.id = public.token.chunk_id"
         " JOIN public.crawl ON public.chunk.crawl_id = public.crawl.id"
-        " WHERE public.chunk.id = %(chunk_id)s LIMIT 1",
+        " WHERE public.chunk.id = %(entity_uuid)s LIMIT 1",
         data
     )
     return cursor.fetchone()
@@ -169,3 +171,19 @@ def fetch_chunk_token_row(cursor, chunk_id):
 def cursor(connection):
     """Return a cursor for the given connection."""
     return connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+def create_postgresql_url(dbname, tablename, entity_uuid, parameters=None):
+    if parameters is None:
+        return f'postgresql://{dbname}/public/{tablename}/{entity_uuid}'
+    return f'postgresql://{dbname}/public/{tablename}/{entity_uuid}?{urllib.parse.urlencode(parameters)}'
+
+
+def parse_postgresql_url(url):
+    """Parse a postgresql url and return a dictionary with the parameters."""
+    parsed = urllib.parse.urlparse(url)
+    return {
+        'dbname': parsed.hostname,
+        'tablename': parsed.path.split('/')[2],
+        'entity_uuid': parsed.path.split('/')[3],
+        'parameters': urllib.parse.parse_qs(parsed.query)
+    }
