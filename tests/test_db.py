@@ -6,6 +6,7 @@ import uuid
 import louis.items as items
 import louis.db as db
 
+import louis.openai
 
 embedding_table = """
 create table if not exists public."{embedding_model}" (
@@ -116,3 +117,6 @@ class TestDB(unittest.TestCase):
         self.assertEqual(parsed['tablename'], "chunk")
         self.assertEqual(parsed['entity_uuid'], entity_uuid)
         self.assertEqual(parsed['parameters']['encoding'][0], "cl100k_base")
+
+    def test_match_documents(self):
+        louis.openai.fetch_embedding('what are the cooking temperatures for e.coli?')

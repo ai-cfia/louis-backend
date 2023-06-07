@@ -1,14 +1,20 @@
 """Database functions for the Louis project."""
+import urllib
 
 import psycopg2
 import psycopg2.extras
 import psycopg2.sql as sql
-import urllib
+from psycopg2.extensions import FLOAT
+
+from pgvector.psycopg2 import register_vector
+
+import numpy as np
 
 def connect_db():
     """Connect to the postgresql database and return the connection."""
     connection = psycopg2.connect(database="inspection.canada.ca")
     # psycopg2.extras.register_uuid()
+    register_vector(connection)
     connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     return connection
 
@@ -189,3 +195,15 @@ def parse_postgresql_url(url):
         'entity_uuid': parsed.path.split('/')[3],
         'parameters': urllib.parse.parse_qs(parsed.query)
     }
+
+def match_documents(cursor, query_embedding):
+    """Match documents with a given query."""
+    data = {
+        'query_embedding': np.array(query_embedding),
+        'match_threshold': 0.5,
+        'match_count': 10
+    }
+
+    cursor.callproc('match_documents', data)
+    # turn into list of dict now to preserve dictionaries
+    return [dict(r) for r in cursor.fetchall()]

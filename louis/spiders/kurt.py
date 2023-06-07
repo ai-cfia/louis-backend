@@ -23,6 +23,16 @@ class KurtSpider(scrapy.Spider):
     """Spider that fetches chunk tokens from the Kurt API and converts them to embedding items"""
     name = "kurt"
 
+    # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quotas-limits
+    # Request limits per model: 300 per minutes
+    # Token limits per model: 120,000 per minute
+    # average processing time per request: 0.040ms (25 requests per second, 25*60=1500 requests per minute)
+    # average input tokens per request: 512 tokens
+
+    custom_settings = {
+        'CONCURRENT_REQUESTS': 1
+    }
+
     def __init__(self, category=None, *args, **kwargs):
         super(KurtSpider, self).__init__(*args, **kwargs)
         self.connection = db.connect_db()
