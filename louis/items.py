@@ -29,3 +29,7 @@ class EmbeddingItem(scrapy.Item):
     token_id = scrapy.Field()
     embedding = scrapy.Field()
     embedding_model = scrapy.Field()
+
+    def __repr__(self):
+        """Return a string representation of the item"""
+        return f"EmbeddingItem(token_id={self['token_id']}, embedding_model={self['embedding_model']})"

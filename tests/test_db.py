@@ -1,10 +1,11 @@
+"""test database functions"""
 import unittest
 import time
+import uuid
 
 import louis.items as items
 import louis.db as db
 
-import uuid
 
 embedding_table = """
 create table if not exists public."{embedding_model}" (
@@ -35,7 +36,7 @@ class TestDB(unittest.TestCase):
 
     def test_store_chunk_item(self):
         """sample test to check if store_chunk_item works"""""
-        with self.connection.cursor() as cursor:
+        with db.cursor(self.connection) as cursor:
             db.store_chunk_item(cursor, items.ChunkItem({
                 "url": "https://inspection.canada.ca/splash",
                 "title": "Test Title",
@@ -99,6 +100,7 @@ class TestDB(unittest.TestCase):
         with db.cursor(self.connection) as cursor:
             cursor.execute(embedding_table.format(embedding_model='test-model'))
             rows = db.fetch_chunk_id_without_embedding(cursor, 'test-model')
+            entity_id = uuid.UUID(rows[0])
             self.connection.rollback()
 
     def test_create_postgresql_url(self):

@@ -3,9 +3,6 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-import psycopg2
-import psycopg2.extras
-
 from scrapy import signals
 
 from urllib.parse import urlparse

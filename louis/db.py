@@ -8,9 +8,13 @@ import urllib
 def connect_db():
     """Connect to the postgresql database and return the connection."""
     connection = psycopg2.connect(database="inspection.canada.ca")
-    psycopg2.extras.register_uuid()
+    # psycopg2.extras.register_uuid()
     connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     return connection
+
+def cursor(connection):
+    """Return a cursor for the given connection."""
+    return connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 def store_chunk_item(cursor, item):
     """Process a ChunkItem and insert it into the database."""
@@ -140,7 +144,7 @@ def fetch_chunk_id_without_embedding(cursor, embedding_model='text-embedding-ada
         " WHERE public.{embedding_model}.embedding IS NULL"
     ).format(embedding_model=sql.Identifier(embedding_model)).as_string(cursor)
     cursor.execute(query)
-    return cursor.fetchall()
+    return [chunk_id[0] for chunk_id in cursor.fetchall()]
 
 def fetch_crawl_row(cursor, url):
     """Fetch the most recent crawl row for a given url."""
@@ -160,17 +164,15 @@ def fetch_chunk_token_row(cursor, url):
     # url to data but for now keep it simple
     data = parse_postgresql_url(url)
     cursor.execute(
-        "SELECT * FROM public.chunk"
+        "SELECT chunk.id as chunk_id, token.id as token_id, tokens FROM public.chunk"
         " JOIN public.token ON public.chunk.id = public.token.chunk_id"
         " JOIN public.crawl ON public.chunk.crawl_id = public.crawl.id"
         " WHERE public.chunk.id = %(entity_uuid)s LIMIT 1",
         data
     )
-    return cursor.fetchone()
-
-def cursor(connection):
-    """Return a cursor for the given connection."""
-    return connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    # psycopg2.extras.DictRow is not a real dict and will convert
+    # to string as a list so we force convert to dict
+    return dict(cursor.fetchone())
 
 def create_postgresql_url(dbname, tablename, entity_uuid, parameters=None):
     if parameters is None:
