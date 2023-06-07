@@ -1,11 +1,9 @@
+"""Scrapy settings for louis project."""
 import os
 import dotenv
 
 dotenv.load_dotenv()
 
-# Scrapy settings for louis project
-#
-# For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
 #
 #     https://docs.scrapy.org/en/latest/topics/settings.html
@@ -97,4 +95,4 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-CLOSESPIDER_ERRORCOUNT = 1
+CLOSESPIDER_ERRORCOUNT = 16
