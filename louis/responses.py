@@ -61,7 +61,7 @@ def response_from_chunk_token(row, url):
     returns: A scrapy HTTP response which can be used for unittesting.
     """
     request = Request(url=url)
-    if not row['tokens']:
+    if not row or 'tokens' not in row or not row['tokens']:
         return Response(url=url, status=404, request=request)
 
     response = TextResponse(

@@ -9,10 +9,10 @@ import louis.db as db
 
 def convert_to_embedding_items(response):
     chunk_token = response.json()
-    embedding = fetch_embedding(chunk_token.tokens)
+    embedding = fetch_embedding(chunk_token['tokens'])
     yield EmbeddingItem(
         {
-            "chunk_id": chunk_token['id'],
+            "token_id": chunk_token['token_id'],
             "embedding": embedding,
             "embedding_model": 'text-embedding-ada-002'
         }
