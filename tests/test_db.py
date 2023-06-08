@@ -86,15 +86,18 @@ class TestDB(unittest.TestCase):
             row = db.fetch_crawl_row(cursor, "https://inspection.canada.ca/splash")
             self.connection.rollback()
         self.assertEqual(row['url'], "https://inspection.canada.ca/splash")
-        self.assertEqual(row['id'], uuid.UUID("37ea48dc-f082-44fe-b48d-b4e6b92582ed"))
+        self.assertEqual(row['id'], "37ea48dc-f082-44fe-b48d-b4e6b92582ed")
 
     def test_fetch_chunk_row(self):
         """sample test to check if fetch_chunk_row works"""
         with db.cursor(self.connection) as cursor:
             # select id from chunk join crawl ON public.chunk.crawl_id = public.crawl.id where url = 'https://inspection.canada.ca/splash'
-            row = db.fetch_chunk_token_row(cursor, "5f3f01f1-0772-43a0-94b8-8547651a3562")
+            row = db.fetch_chunk_token_row(cursor, "postgresql://inspection.canada.ca/public/chunk/5f3f01f1-0772-43a0-94b8-8547651a3562")
             self.connection.rollback()
-        self.assertEqual(row['url'], "https://inspection.canada.ca/splash")
+        self.assertEqual(row['chunk_id'], "5f3f01f1-0772-43a0-94b8-8547651a3562")
+        self.assertEqual(row['token_id'], '260ccded-f58c-40be-8a35-3ced2c2e6b75')
+        self.assertEqual(len(row['tokens']), 25)
+
 
     def test_fetch_chunk_id_without_embedding(self):
         """sample test to check if fetch_chunk_id_without_embedding works"""

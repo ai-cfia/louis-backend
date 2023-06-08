@@ -1,18 +1,25 @@
 """Database functions for the Louis project."""
 import urllib
+import logging
+
+LOGGER = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 import psycopg2
-import psycopg2.extras
+from psycopg2.extras import LoggingConnection
 import psycopg2.sql as sql
-from psycopg2.extensions import FLOAT
 
 from pgvector.psycopg2 import register_vector
 
 import numpy as np
 
-def connect_db():
+
+
+def connect_db(connection_factory=LoggingConnection):
     """Connect to the postgresql database and return the connection."""
-    connection = psycopg2.connect(database="inspection.canada.ca")
+    connection = psycopg2.connect(
+        connection_factory=connection_factory, database="inspection.canada.ca")
+    connection.initialize(LOGGER)
     # psycopg2.extras.register_uuid()
     register_vector(connection)
     connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
@@ -199,6 +206,9 @@ def parse_postgresql_url(url):
 def match_documents(cursor, query_embedding):
     """Match documents with a given query."""
     data = {
+        # TODO: use of np.array to get it to recognize the vector type
+        # is there a simpler way to do this? only reason we use this
+        # dependency
         'query_embedding': np.array(query_embedding),
         'match_threshold': 0.5,
         'match_count': 10

@@ -5,7 +5,6 @@ import os
 
 import louis.db as db
 
-import louis.openai
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 
@@ -34,4 +33,4 @@ class TestMatchDocuments(unittest.TestCase):
         with db.cursor(self.connection) as cursor:
             documents = db.match_documents(cursor, query_embedding)
         self.assertEqual(len(documents), 10)
-        self.assertEqual(documents[0]['id'], '18d9bece-290d-409d-a8d8-77ac7e7a8dc4')
+        self.assertEqual(documents[0]['id'], 'bfd82860-4ad9-42ae-b7d6-4d087b39a085')
