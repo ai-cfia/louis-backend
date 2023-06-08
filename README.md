@@ -121,3 +121,4 @@ Suggested: https://dbeaver.io/download/
 * [Switch postgresql to utf-8](https://tutorials.technology/tutorials/How-to-change-postgresql-database-encoding-to-UTF8-from-SQL_ASCII.html?utm_content=cmp-true)
 * [pgvector](https://github.com/pgvector/pgvector)
 * [Tutorial: Explore Azure OpenAI Service embeddings and document search](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/tutorials/embeddings)
+* [How to optimize performance when using pgvector on Azure Cosmos DB for PostgreSQL](]https://learn.microsoft.com/en-us/azure/cosmos-db/postgresql/howto-optimize-performance-pgvector)
