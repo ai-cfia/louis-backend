@@ -1,21 +1,11 @@
 # inspection.canada.ca crawler
 
-For information on this repo API, see [API documentation](API.md)
+## Table of content:
 
-## Overview
 
-We use scrapy as a generic job queue processing facility from crawling pages (from a live connection of a cached disk version) to processing rows of data in the database. The architecture and multiprocessing facilities let us organize the code and scrapy offer a number of builtin services to monitor and manage long job queues.
-
-Flows as follow:
-
-* spider (such as louis/spiders/kurt.py) is instantiated and start_requests is called
-  * start_request generates a series of requests (possibly from rows in the db) bound for a method of spider (parse)
-* requests are handled by louis/middleware.py
-  * the content for each request is fetched from a web server, filesystem or database
-  * the content is turned into a response
-* responses are sent back to the spider. The spider generates Item from the responses
-* items are received by the louis/pipeline.py
-  * items are store in the database
+* [Crawler documentation](CRAWL.md)
+* [DB documentation](DB.md)
+* [API documentation](API.md)
 
 Layers:
 
@@ -39,94 +29,6 @@ stretch
 
 * build indexing-on-request API (can accept, queue and process external links)
 
-## running the crawlers
-
-We use the crawlers in a little bit of a non-standard way.
-
-Instead of hitting a website, we pick up the URL from disk
-
-As a second step, we pick up rows from the database
-
-As a third step, we pick up rows from the database to pass to the embedding API
-
-goldie crawler: HTML from disk dump in Cache/:
-
-```
-scrapy crawl goldie --logfile goldie.log
-```
-
-hawn crawler: crawl table to chunk and token:
-
-```
-scrapy crawl hawn --logfile hawn.log
-```
-
-kurt crawler: crawl tokens to embedding
-
-```
-scrapy crawl kurt --logfile kurt.log
-```
-
-
-## database setup
-
-We've added the devcontainer postgres feature. Config files are in
-
-```
-/home/vscode/.asdf/installs/postgres/15.3/data/*.conf
-```
-
-In the devcontainer you can start the database:
-
-```
-pg_ctl start
-```
-
-```
-psql -U postgres
-CREATE USER vscode;
-ALTER USER vscode WITH SUPERUSER;
-```
-
-and then
-
-```
-createdb -E utf-8 inspection.canada.ca
-```
-
-and then
-
-```
-psql -d inspection.canada.ca
-```
-
-## postgresql extensions
-
-```
-pip install pgxnclient
-pgxn install vector
-```
-
-see extensions available: https://pgxn.org/
-
-## database client
-
-Suggested: https://dbeaver.io/download/
-
-## Running and testing the API
-
-
-Running:
-
-```
-flask run
-```
-
-Query from the command-line:
-
-```
-curl -X POST http://localhost:5000/search --data '{"query": "is e.coli a virus or bacteria?"}' -H "Content-Type: application/json"
-```
 
 ## References
 
