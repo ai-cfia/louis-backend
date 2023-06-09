@@ -12,7 +12,7 @@ Query from the command-line:
 curl -X POST http://localhost:5000/search --data '{"query": "is e.coli a virus or bacteria?"}' -H "Content-Type: application/json"
 ```
 
-Example output available in [tests/api/is e.coli a virus or a bacteria?.json](tests/api/is e.coli a virus or a bacteria?.json).
+Example output available in [tests/api/is e.coli a virus or a bacteria\?.json](tests/api/is%20e.coli%20a%20virus%20or%20a%20bacteria%3F.json).
 
 JSON structure explanation:
 
