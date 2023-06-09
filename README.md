@@ -1,5 +1,7 @@
 # inspection.canada.ca crawler
 
+For information on this repo API, see [API documentation](API.md)
+
 ## Overview
 
 We use scrapy as a generic job queue processing facility from crawling pages (from a live connection of a cached disk version) to processing rows of data in the database. The architecture and multiprocessing facilities let us organize the code and scrapy offer a number of builtin services to monitor and manage long job queues.
@@ -111,6 +113,21 @@ see extensions available: https://pgxn.org/
 
 Suggested: https://dbeaver.io/download/
 
+## Running and testing the API
+
+
+Running:
+
+```
+flask run
+```
+
+Query from the command-line:
+
+```
+curl -X POST http://localhost:5000/search --data '{"query": "is e.coli a virus or bacteria?"}' -H "Content-Type: application/json"
+```
+
 ## References
 
 * [text-embedding-ada-002](https://platform.openai.com/docs/guides/embeddings)
@@ -122,3 +139,4 @@ Suggested: https://dbeaver.io/download/
 * [pgvector](https://github.com/pgvector/pgvector)
 * [Tutorial: Explore Azure OpenAI Service embeddings and document search](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/tutorials/embeddings)
 * [How to optimize performance when using pgvector on Azure Cosmos DB for PostgreSQL](]https://learn.microsoft.com/en-us/azure/cosmos-db/postgresql/howto-optimize-performance-pgvector)
+* [Building a custom connector](https://docs.elastic.co/search-ui/guides/building-a-custom-connector)
