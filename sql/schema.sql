@@ -77,15 +77,24 @@ returns table (
 )
 language sql stable
 as $$
-  select
-    documents.id,
-    documents.url,
-    documents.title,
-    documents.subtitle,
-    documents.content,
-    1 - (documents.embedding <=> query_embedding) as similarity
-  from documents
-  where 1 - (documents.embedding <=> query_embedding) > match_threshold
-  order by similarity desc
-  limit match_count;
+	SET ivfflat.probes = 8;
+	select
+	    documents.id,
+	    documents.url,
+	    documents.title,
+	    documents.subtitle,
+	    documents.content,
+	    1 - (documents.embedding <=> query_embedding) as similarity
+  	from documents
+  	where 1 - (documents.embedding <=> query_embedding) > match_threshold
+  	order by similarity desc
+  	limit match_count;
 $$;
+
+-- https://github.com/pgvector/pgvector
+-- lists: rows / 1000 for up to 1M rows and sqrt(rows) for over 1M rows
+-- probes: lists / 10 for up to 1M rows and sqrt(lists) for over 1M rows
+-- 83K records = 83 lists and 8 probes
+CREATE INDEX t_ada002_embedding_cosine_idx 
+	ON public."text-embedding-ada-002"  
+	USING ivfflat (embedding vector_cosine_ops) WITH (lists = 83);

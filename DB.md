@@ -41,6 +41,53 @@ pgxn install vector
 
 see extensions available: https://pgxn.org/
 
+
+## configuration
+
+postgresql.conf
+
+```
+log_min_duration_statement = 40
+```
+
+## testing impact of indexes by flushing cache first
+
+stop database:
+
+```
+pg_ctl stop
+```
+
+in your OS (not the container):
+
+```
+echo 3 > /proc/sys/vm/drop_caches
+```
+
+start database:
+
+```
+pg_ctl start
+```
+
+test query:
+
+```
+time curl -X POST http://localhost:5000/search --data '{"query": "is e.coli a virus or bacteria?"}' -H "Content-Type: application/json"
+```
+
+result:
+
+```
+real    0m4.791s
+user    0m0.003s
+sys     0m0.016s
+```
+
+create index.
+
+Repeat operations to clear cache.
+
 ## database client
 
 Suggested: https://dbeaver.io/download/
