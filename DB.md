@@ -14,6 +14,20 @@ In the devcontainer you can start the database:
 pg_ctl start
 ```
 
+## changing default template to utf-8
+
+if the default database is set to SQL_ASCII, it will cause problems:
+```
+UPDATE pg_database SET datistemplate = FALSE WHERE datname = 'template1';
+DROP DATABASE template1;
+CREATE DATABASE template1 WITH TEMPLATE = template0 ENCODING = 'UTF8';
+UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'template1';
+\c template1
+VACUUM FREEZE;
+```
+
+## creating the database
+
 ```
 psql -U postgres
 CREATE USER vscode;
@@ -31,6 +45,28 @@ and then
 ```
 psql -d inspection.canada.ca
 ```
+
+## loading dump
+
+```
+psql -v ON_ERROR_STOP=1 --single-transaction -d inspection.canada.ca < inspection.canada.ca.2023-06-09.pg_dump
+```
+
+## workaround for psycopg2 not finding the socket file
+
+either build from source:
+
+```
+pip install --no-binary psycopg2
+```
+
+or symlink:
+
+```
+sudo mkdir -p /var/run/postgresql
+sudo ln -s /tmp/.s.PGSQL.5432 /var/run/postgresql/.s.PGSQL.5432
+```
+
 
 ## postgresql extensions
 

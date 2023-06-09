@@ -42,3 +42,4 @@ stretch
 * [Tutorial: Explore Azure OpenAI Service embeddings and document search](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/tutorials/embeddings)
 * [How to optimize performance when using pgvector on Azure Cosmos DB for PostgreSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/postgresql/howto-optimize-performance-pgvector)
 * [Building a custom connector](https://docs.elastic.co/search-ui/guides/building-a-custom-connector)
+* [How to change PostgreSQL database encoding to UTF-8](https://www.shubhamdipt.com/blog/how-to-change-postgresql-database-encoding-to-utf8/)
