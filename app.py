@@ -1,15 +1,14 @@
+"""The main Flask app for the Louis API."""
 import dotenv
-import os
-
-dotenv.load_dotenv()
 
 from flask import Flask, request, jsonify
 
-import louis.openai as openai
+from louis import openai
 import louis.db as db
 
-app = Flask(__name__)
+dotenv.load_dotenv()
 
+app = Flask(__name__)
 
 @app.route('/search', methods=['POST'])
 def search():
