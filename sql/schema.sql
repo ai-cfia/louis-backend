@@ -69,6 +69,9 @@ create or replace function match_documents (
 )
 returns table (
   id uuid,
+  url text,
+  title text,
+  subtitle text,
   content text,
   similarity float
 )
@@ -76,6 +79,9 @@ language sql stable
 as $$
   select
     documents.id,
+    documents.url,
+    documents.title,
+    documents.subtitle,
     documents.content,
     1 - (documents.embedding <=> query_embedding) as similarity
   from documents
