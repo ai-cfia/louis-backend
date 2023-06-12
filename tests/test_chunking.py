@@ -5,7 +5,7 @@ import unittest
 
 from bs4 import BeautifulSoup
 
-from louis.chunking import segment_blocks_into_chunks, chunk_html
+from louis.crawler.chunking import segment_blocks_into_chunks, chunk_html
 
 EXAMPLE1 = (
     "<html><body>"

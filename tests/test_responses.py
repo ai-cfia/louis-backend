@@ -1,6 +1,6 @@
 import unittest
 
-import louis.responses as responses
+import louis.crawler.responses as responses
 
 class TestResponses(unittest.TestCase):
     def test_response_from_chunk_token(self):

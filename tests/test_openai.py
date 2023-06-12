@@ -1,6 +1,6 @@
 import unittest
 
-import louis.openai as openai
+import louis.models.openai as openai
 
 class TestResponses(unittest.TestCase):
     def test_fetch_embedding(self):

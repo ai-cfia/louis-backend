@@ -75,7 +75,7 @@ returns table (
   content text,
   similarity float
 )
-language sql stable
+language sql volatile
 as $$
 	SET ivfflat.probes = 8;
 	select
@@ -95,6 +95,6 @@ $$;
 -- lists: rows / 1000 for up to 1M rows and sqrt(rows) for over 1M rows
 -- probes: lists / 10 for up to 1M rows and sqrt(lists) for over 1M rows
 -- 83K records = 83 lists and 8 probes
-CREATE INDEX t_ada002_embedding_cosine_idx 
-	ON public."text-embedding-ada-002"  
+create index if not exists t_ada002_embedding_cosine_idx
+	ON public."text-embedding-ada-002"
 	USING ivfflat (embedding vector_cosine_ops) WITH (lists = 83);
