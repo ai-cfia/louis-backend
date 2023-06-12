@@ -3,9 +3,9 @@ import time
 import scrapy
 from bs4 import BeautifulSoup, Comment
 
-from louis.items import ChunkItem
-from louis.requests import extract_urls
-from louis.chunking import chunk_html
+from louis.crawler.items import ChunkItem
+from louis.crawler.requests import extract_urls
+from louis.crawler.chunking import chunk_html
 
 
 def convert_to_chunk_items(response):

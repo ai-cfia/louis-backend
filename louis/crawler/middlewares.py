@@ -7,7 +7,7 @@ from scrapy import signals
 
 from urllib.parse import urlparse
 
-from louis.responses import fake_response_from_file, response_from_crawl, response_from_chunk_token
+from louis.crawler.responses import fake_response_from_file, response_from_crawl, response_from_chunk_token
 
 import louis.db as db
 

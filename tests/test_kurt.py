@@ -1,9 +1,9 @@
 """Test the Kurt spider"""
 import unittest
 
-from louis.spiders.kurt import KurtSpider
+from louis.crawler.spiders.kurt import KurtSpider
 
-from louis.responses import response_from_chunk_token
+from louis.crawler.responses import response_from_chunk_token
 
 class TestKurt(unittest.TestCase):
     """Test the Kurt spider"""

@@ -3,10 +3,10 @@ import unittest
 import time
 import uuid
 
-import louis.items as items
+import louis.crawler.items as items
 import louis.db as db
 
-import louis.openai
+import louis.models.openai
 
 embedding_table = """
 create table if not exists public."{embedding_model}" (
@@ -122,4 +122,4 @@ class TestDB(unittest.TestCase):
         self.assertEqual(parsed['parameters']['encoding'][0], "cl100k_base")
 
     def test_match_documents(self):
-        louis.openai.fetch_embedding('what are the cooking temperatures for e.coli?')
+        louis.models.openai.fetch_embedding('what are the cooking temperatures for e.coli?')

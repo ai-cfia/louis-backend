@@ -3,8 +3,8 @@ import time
 import scrapy
 from bs4 import BeautifulSoup, Comment
 
-from louis.items import CrawlItem
-from louis.requests import extract_urls, fix_vhost
+from louis.crawler.items import CrawlItem
+from louis.crawler.requests import extract_urls, fix_vhost
 
 
 def convert_to_crawl_item(response):

@@ -3,7 +3,7 @@ import dotenv
 
 from flask import Flask, request, jsonify
 
-from louis import openai
+from louis.models import openai
 import louis.db as db
 
 dotenv.load_dotenv()

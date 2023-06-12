@@ -2,8 +2,8 @@
 
 import scrapy
 
-from louis.items import EmbeddingItem
-from louis.openai import fetch_embedding
+from louis.crawler.items import EmbeddingItem
+from louis.models.openai import fetch_embedding
 
 import louis.db as db
 

@@ -2,8 +2,8 @@ import unittest
 
 from scrapy import Request
 from bs4 import BeautifulSoup
-from louis.responses import fake_response_from_file
-from louis.spiders.goldie import GoldieSpider
+from louis.crawler.responses import fake_response_from_file
+from louis.crawler.spiders.goldie import GoldieSpider
 
 # get directory of this file
 # https://stackoverflow.com/questions/5137497/find-current-directory-and-files-directory'

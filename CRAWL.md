@@ -28,17 +28,17 @@ As a third step, we pick up rows from the database to pass to the embedding API
 goldie crawler: HTML from disk dump in Cache/:
 
 ```
-scrapy crawl goldie --logfile goldie.log
+scrapy crawl goldie --logfile logs/goldie.log
 ```
 
 hawn crawler: crawl table to chunk and token:
 
 ```
-scrapy crawl hawn --logfile hawn.log
+scrapy crawl hawn --logfile logs/hawn.log
 ```
 
 kurt crawler: crawl tokens to embedding
 
 ```
-scrapy crawl kurt --logfile kurt.log
+scrapy crawl kurt --logfile logs/kurt.log
 ```
