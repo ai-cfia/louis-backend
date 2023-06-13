@@ -3,8 +3,8 @@ import dotenv
 
 from flask import Flask, request, jsonify
 
-from louis.models import openai
-import louis.db as db
+from louis.actions import smartsearch
+
 
 dotenv.load_dotenv()
 
@@ -14,8 +14,5 @@ app = Flask(__name__)
 def search():
     """Search for documents similar to the query."""
     query = request.json['query']
-    query_embedding = openai.fetch_embedding(query)
-    connection = db.connect_db()
-    with db.cursor(connection) as cursor:
-        documents = db.match_documents(cursor, query_embedding)
-        return jsonify(documents)
+    return jsonify(smartsearch(query))
+
