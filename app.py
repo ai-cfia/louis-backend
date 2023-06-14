@@ -6,7 +6,6 @@ from flask import Flask
 
 from louis.blueprints.search import search
 from louis.blueprints.chat import chat
-from louis.blueprints.static import static
 
 app = Flask(__name__, static_folder='static/')
 
@@ -17,4 +16,3 @@ def static_file(path):
 
 app.register_blueprint(search, url_prefix='/search')
 app.register_blueprint(chat, url_prefix='/chat')
-# app.register_blueprint(static, url_prefix='/', static_folder='dist/')

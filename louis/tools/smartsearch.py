@@ -3,7 +3,7 @@ from langchain.tools import tool
 from louis import actions
 
 @tool
-def SmartSearch(query: str) -> str:
+def SmartSearch(query: str, max_tokens=3000) -> str:
     """
     Returns list of documents from inspection.canada.ca,
     the official website of the CFIA
@@ -11,11 +11,11 @@ def SmartSearch(query: str) -> str:
     semantic similarity to query"""
     documents = actions.smartsearch(query)
     paragraphs = []
+    total_tokens = 0
     for doc in documents:
-        tokens_count = doc['tokens_count']
-        if tokens_count > 256:
-            proportional_length = int(256/tokens_count*len(doc['content']))
-            doc['content'] = doc['content'][0:proportional_length] + "..."
-        paragraph = f"{doc['title']} from {doc['url']}: {doc['content']}"
+        total_tokens += doc['tokens_count']
+        if total_tokens > max_tokens:
+            break
+        paragraph = f"{doc['title']} from {doc['url']} : {doc['content']}"
         paragraphs.append(paragraph)
     return "\n".join(paragraphs)

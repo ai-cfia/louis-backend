@@ -6,7 +6,7 @@ import json
 from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.llms.openai import AzureOpenAI
 
-from louis.tool.smartsearch import SmartSearch
+from louis.tools.smartsearch import SmartSearch
 
 class ChainAgent:
     """ChainAgent is a wrapper around the Louis agent that adds the SmartSearch tool"""
