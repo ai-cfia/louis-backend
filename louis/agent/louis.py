@@ -8,9 +8,6 @@ AZURE_OPENAI_SERVICE = os.environ.get("AZURE_OPENAI_SERVICE") or "myopenai"
 AZURE_OPENAI_GPT_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT_DEPLOYMENT") or "davinci"
 AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.environ.get("AZURE_OPENAI_CHATGPT_DEPLOYMENT") or "chat"
 
-# Simple retrieve-then-read implementation, using the Cognitive Search and OpenAI APIs directly. It first retrieves
-# top documents from search, then constructs a prompt with them, and then uses OpenAI to generate an completion
-# (answer) with that prompt.
 class Louis:
     prompt_prefix = """<|im_start|>system
 You are Louis, a french and english bilingual virtual assistant for the Canadian Food Inspection Agency.
@@ -76,8 +73,9 @@ Search query:
             stop=["\n"])
         q = completion.choices[0].text
 
-        results = self.search_client.search(q)
-        content = nonewlines("\n".join([r['metadata']['text'] for r in results]))
+        results = self.search_client(q)
+        print(results)
+        content = nonewlines("\n".join([r['content'] for r in results]))
 
         follow_up_questions_prompt = self.follow_up_questions_prompt_content if overrides.get("suggest_followup_questions") else ""
 

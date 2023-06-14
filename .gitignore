@@ -164,3 +164,4 @@ Cache/
 **/*.dump
 **/*.pg_dump
 **/*.zip
+static/**

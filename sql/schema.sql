@@ -55,7 +55,8 @@ create view documents as(
 		crawl.title as title,
 		chunk.title as subtitle,
 		chunk.text_content as content,
-		embedding.embedding as embedding
+		embedding.embedding as embedding,
+		cardinality(token.tokens) as tokens_count
 	from crawl, chunk, token, "text-embedding-ada-002" as embedding
 	where crawl.id = chunk.crawl_id
 	and chunk.id = token.chunk_id
@@ -73,7 +74,8 @@ returns table (
   title text,
   subtitle text,
   content text,
-  similarity float
+  similarity float,
+  tokens_count integer
 )
 language sql volatile
 as $$
@@ -84,7 +86,8 @@ as $$
 	    documents.title,
 	    documents.subtitle,
 	    documents.content,
-	    1 - (documents.embedding <=> query_embedding) as similarity
+	    1 - (documents.embedding <=> query_embedding) as similarity,
+	    documents.tokens_count as tokens_count
   	from documents
   	where 1 - (documents.embedding <=> query_embedding) > match_threshold
   	order by similarity desc
