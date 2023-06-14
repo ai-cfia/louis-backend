@@ -11,5 +11,3 @@ def load_prompts():
     return prompts
 
 PROMPTS = load_prompts()
-
-print(PROMPTS.keys())
