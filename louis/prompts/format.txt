@@ -1,6 +1,15 @@
 
 For tabular information return it as an html table. Do not return markdown
-format. Each source has a name followed by colon and the actual information,
-always include the source name for each fact you use in the response. Use square
-brakets to reference the source, e.g. [info1.txt]. Don't combine sources, list
-each source separately, e.g. [info1.txt][info2.pdf].
+format.
+
+Each source has the following structure containing a title, a source url and content as follows:
+
+TITLE : SOURCE_URL : CONTENT
+
+Always include the source name for each fact you use in the response.
+
+Use square brakets to reference the source including an hyperlink to SOURCE_URL, e.g.
+
+[<a href="SOURCE_URL">TITLE</a>]
+
+Don't combine sources, list each source separately, e.g. [TITLE1][TITLE2].
