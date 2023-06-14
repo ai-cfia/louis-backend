@@ -1,4 +1,5 @@
 """Database functions for the Louis project."""
+import os
 import urllib
 import logging
 
@@ -14,11 +15,13 @@ from pgvector.psycopg2 import register_vector
 import numpy as np
 
 
+LOUIS_DSN = os.environ.get("LOUIS_DSN")
 
 def connect_db(connection_factory=LoggingConnection):
     """Connect to the postgresql database and return the connection."""
     connection = psycopg2.connect(
-        connection_factory=connection_factory, database="inspection.canada.ca")
+        dsn=LOUIS_DSN,
+        connection_factory=connection_factory)
     connection.initialize(LOGGER)
     # psycopg2.extras.register_uuid()
     register_vector(connection)

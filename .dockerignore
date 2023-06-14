@@ -1,0 +1,12 @@
+.git*
+**/*.pyc
+logs/**
+dumps/**
+sql/**
+tests/**
+**/__pycache__
+.scrapy
+.vscode
+.devcontainer
+*.md
+Cache/**

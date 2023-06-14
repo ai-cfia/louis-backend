@@ -45,9 +45,9 @@ create table if not exists public."text-embedding-ada-002" (
 	unique(token_id)
 );
 
-drop view documents;
+drop view public.documents;
 
-create view documents as(
+create view public.documents as(
 	select
 		crawl.id as id,
 		crawl.url as url,
@@ -63,7 +63,9 @@ create view documents as(
 	and token.id = embedding.token_id
 );
 
-create or replace function match_documents (
+GRANT SELECT ON TABLE public.documents TO louisreadonly;
+
+create or replace function public.match_documents (
   query_embedding vector(1536),
   match_threshold float,
   match_count int
