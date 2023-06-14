@@ -9,6 +9,7 @@ class TestChainAgent(unittest.TestCase):
     def setUp(self) -> None:
         self.agent = ChainAgent()
         self.maxDiff = None
+
     def test_basic_query(self):
         response = self.agent.run("What does the acronym CFIA stand for? Only answer with the expanded acronym.")
         self.assertIn('input', response)
