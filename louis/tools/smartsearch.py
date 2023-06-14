@@ -16,6 +16,6 @@ def SmartSearch(query: str, max_tokens=3000) -> str:
         total_tokens += doc['tokens_count']
         if total_tokens > max_tokens:
             break
-        paragraph = f"{doc['title']} from {doc['url']} : {doc['content']}"
+        paragraph = f"{doc['title']} : {doc['url']} : {doc['content']}"
         paragraphs.append(paragraph)
     return "\n".join(paragraphs)

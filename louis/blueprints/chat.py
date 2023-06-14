@@ -13,6 +13,7 @@ louis = Louis(SmartSearch)
 def chat_user():
     try:
         r = louis.run(request.json["history"], request.json.get("overrides") or {})
+        print(r)
         return jsonify(r)
     except Exception as e:
         logging.exception("Exception in /chat")
