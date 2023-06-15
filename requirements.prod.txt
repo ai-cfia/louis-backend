@@ -10,3 +10,4 @@ langchainplus-sdk==0.0.8
 psycopg==3.1.9
 psycopg-binary==3.1.9
 psycopg-c==3.1.9
+Flask-Cors==3.0.10
