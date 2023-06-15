@@ -3,11 +3,13 @@ import dotenv
 dotenv.load_dotenv()
 
 from flask import Flask
+from flask_cors import CORS
 
 from louis.blueprints.search import search
 from louis.blueprints.chat import chat
 
 app = Flask(__name__, static_folder='static/')
+CORS(app)
 
 @app.route("/", defaults={"path": "index.html"})
 @app.route("/<path:path>")
