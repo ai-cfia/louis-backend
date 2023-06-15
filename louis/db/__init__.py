@@ -6,31 +6,30 @@ import logging
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-import psycopg2
-from psycopg2.extras import LoggingConnection
-import psycopg2.sql as sql
+import psycopg
+import psycopg.sql as sql
 
-from pgvector.psycopg2 import register_vector
+from pgvector.psycopg import register_vector
 
 import numpy as np
 
+from psycopg.rows import dict_row
 
 LOUIS_DSN = os.environ.get("LOUIS_DSN")
 
-def connect_db(connection_factory=LoggingConnection):
+def connect_db():
     """Connect to the postgresql database and return the connection."""
-    connection = psycopg2.connect(
-        dsn=LOUIS_DSN,
-        connection_factory=connection_factory)
-    connection.initialize(LOGGER)
-    # psycopg2.extras.register_uuid()
+    connection = psycopg.connect(
+        conninfo=LOUIS_DSN,
+        row_factory=dict_row,
+        autocommit=True)
+    # psycopg.extras.register_uuid()
     register_vector(connection)
-    connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     return connection
 
 def cursor(connection):
     """Return a cursor for the given connection."""
-    return connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    return connection.cursor()
 
 def store_chunk_item(cursor, item):
     """Process a ChunkItem and insert it into the database."""
@@ -63,7 +62,7 @@ def store_chunk_item(cursor, item):
         data['token_id'] = cursor.fetchone()[0]
 
         return item
-    except psycopg2.IntegrityError:
+    except psycopg.IntegrityError:
         # ignore duplicates and keep processing
         return item
 
@@ -82,7 +81,7 @@ def store_crawl_item(cursor, item):
             )
         )
         return item
-    except psycopg2.IntegrityError:
+    except psycopg.IntegrityError:
         # ignore duplicates and keep processing
         return item
 
@@ -103,7 +102,7 @@ def store_embedding_item(cursor, item):
             data
         )
         return item
-    except psycopg2.IntegrityError:
+    except psycopg.IntegrityError:
         # ignore duplicates and keep processing
         return item
 
@@ -130,7 +129,7 @@ def link_pages(cursor, source_url, destination_url):
             " VALUES (%(source_crawl_id)s, %(destination_crawl_id)s)",
             data
         )
-    except psycopg2.IntegrityError:
+    except psycopg.IntegrityError:
         # ignore duplicates and keep processing
         return
 
@@ -186,7 +185,7 @@ def fetch_chunk_token_row(cursor, url):
         " WHERE public.chunk.id = %(entity_uuid)s LIMIT 1",
         data
     )
-    # psycopg2.extras.DictRow is not a real dict and will convert
+    # psycopg.extras.DictRow is not a real dict and will convert
     # to string as a list so we force convert to dict
     return dict(cursor.fetchone())
 
@@ -212,11 +211,14 @@ def match_documents(cursor, query_embedding):
         # TODO: use of np.array to get it to recognize the vector type
         # is there a simpler way to do this? only reason we use this
         # dependency
-        'query_embedding': np.array(query_embedding),
+        # 'query_embedding': np.array(query_embedding),
+        'query_embedding': query_embedding,
         'match_threshold': 0.5,
         'match_count': 10
     }
 
-    cursor.callproc('match_documents', data)
+    # cursor.callproc('match_documents', data)
+    cursor.execute("SELECT * FROM match_documents(%(query_embedding)s::vector, %(match_threshold)s, %(match_count)s)", data)
+
     # turn into list of dict now to preserve dictionaries
     return [dict(r) for r in cursor.fetchall()]

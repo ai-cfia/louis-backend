@@ -1,7 +1,7 @@
 import unittest
 import dotenv
 
-from louis.agent.chain import ChainAgent
+from louis.agents.chain import ChainAgent
 
 dotenv.load_dotenv()
 
