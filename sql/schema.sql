@@ -63,8 +63,6 @@ create view public.documents as(
 	and token.id = embedding.token_id
 );
 
-GRANT SELECT ON TABLE public.documents TO louisreadonly;
-
 create or replace function public.match_documents (
   query_embedding vector(1536),
   match_threshold float,

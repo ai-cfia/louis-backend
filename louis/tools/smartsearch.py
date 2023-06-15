@@ -2,8 +2,10 @@ from langchain.tools import tool
 
 from louis import actions
 
+MAX_TOKENS = 3000
+
 @tool
-def SmartSearch(query: str, max_tokens=3000) -> str:
+def SmartSearch(query: str) -> str:
     """
     Returns list of documents from inspection.canada.ca,
     the official website of the CFIA
@@ -14,7 +16,7 @@ def SmartSearch(query: str, max_tokens=3000) -> str:
     total_tokens = 0
     for doc in documents:
         total_tokens += doc['tokens_count']
-        if total_tokens > max_tokens:
+        if total_tokens > MAX_TOKENS:
             break
         paragraph = f"{doc['title']} : {doc['url']} : {doc['content']}"
         paragraphs.append(paragraph)

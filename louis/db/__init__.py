@@ -45,21 +45,21 @@ def store_chunk_item(cursor, item):
             "SELECT id FROM public.crawl WHERE url = %(url)s ORDER BY last_updated DESC LIMIT 1",
             data
         )
-        data['crawl_id'] = cursor.fetchone()[0]
+        data['crawl_id'] = cursor.fetchone()['id']
         cursor.execute(
             "INSERT INTO public.chunk (crawl_id, title, text_content)"
                 " VALUES(%(crawl_id)s::UUID, %(title)s, %(text_content)s)"
             " RETURNING id",
             data
         )
-        data['chunk_id'] = cursor.fetchone()[0]
+        data['chunk_id'] = cursor.fetchone()['chunk_id']
         cursor.execute(
             "INSERT INTO public.token (chunk_id, tokens, encoding)"
-                " VALUES (%(chunk_id)s::UUID, %(tokens)s, %(encoding)s)"
+                " VALUES (%(chunk_id)s::UUID, %(tokens)s::vector, %(encoding)s)"
             " RETURNING id",
             data
         )
-        data['token_id'] = cursor.fetchone()[0]
+        data['token_id'] = cursor.fetchone()['token_id']
 
         return item
     except psycopg.IntegrityError:
@@ -90,12 +90,13 @@ def store_embedding_item(cursor, item):
     try:
         data = {
             'token_id': item["token_id"],
-            'embedding': item["embedding"],
+            # TODO: shouldn't python-pgvector support casting from smallint[] to vector?
+            'embedding': np.array(item["embedding"]),
             'embedding_model': item["embedding_model"],
         }
         query = sql.SQL(
                 'INSERT INTO public.{embedding_model} (token_id, embedding)'
-                ' VALUES (%(token_id)s, %(embedding)s)'
+                ' VALUES (%(token_id)s, %(embedding)s::vector)'
             ).format(embedding_model=sql.Identifier(data['embedding_model'])).as_string(cursor)
         cursor.execute(
            query,
@@ -147,7 +148,7 @@ def fetch_links(cursor, url):
             " ORDER BY last_updated DESC LIMIT 1)",
         data
     )
-    data['destination_urls'] = [r[0] for r in cursor.fetchall()]
+    data['destination_urls'] = [r['url'] for r in cursor.fetchall()]
     return data['destination_urls']
 
 def fetch_chunk_id_without_embedding(cursor, embedding_model='text-embedding-ada-002'):
@@ -159,7 +160,7 @@ def fetch_chunk_id_without_embedding(cursor, embedding_model='text-embedding-ada
         " WHERE public.{embedding_model}.embedding IS NULL"
     ).format(embedding_model=sql.Identifier(embedding_model)).as_string(cursor)
     cursor.execute(query)
-    return [chunk_id[0] for chunk_id in cursor.fetchall()]
+    return [chunk_id['chunk_id'] for chunk_id in cursor.fetchall()]
 
 def fetch_crawl_row(cursor, url):
     """Fetch the most recent crawl row for a given url."""
