@@ -14,5 +14,5 @@ app = Flask(__name__, static_folder='static/')
 def static_file(path):
     return app.send_static_file(path)
 
-app.register_blueprint(search, url_prefix='/search')
-app.register_blueprint(chat, url_prefix='/chat')
+app.register_blueprint(search, url_prefix='/search', strict_slashes=False)
+app.register_blueprint(chat, url_prefix='/chat', strict_slashes=False)

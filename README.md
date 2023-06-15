@@ -55,6 +55,25 @@ docker push $CONTAINER_REGISTRY.azurecr.io/louis-demo
 
 The password and username $CONTAINER_REGISTRY_ADMIN is from from Portal Azure Access Keys page of the container registry view.
 
+## pushing to google cloud run
+
+https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling
+
+```
+sudo snap install google-cloud-cli --classic
+gcloud auth configure-docker <your registry location>
+docker tag louis-demo <registry>/<project-id>/<repository>/louis-demo
+docker push <registry>/<project-id>/<repository>/louis-demo
+```
+
+...and you can then deploy
+
+## fixing errors 308
+
+https://cloud.google.com/api-gateway/docs/get-started-cloud-run
+
+https://cloud.google.com/run/docs/configuring/static-outbound-ip?utm_campaign=CDR_ahm_aap-severless_cloud-run-faq_&utm_source=external&utm_medium=web
+
 ## Layers
 
 Layers:
