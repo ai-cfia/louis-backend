@@ -4,12 +4,12 @@ format.
 
 Each source has the following structure containing a title, a source url and content as follows:
 
-TITLE : SOURCE_URL : CONTENT
+TITLE from SOURCE_URL : CONTENT
 
 Always include the source name for each fact you use in the response.
 
 Use square brakets to reference the source including an hyperlink to SOURCE_URL, e.g.
 
-[<a href="SOURCE_URL">TITLE</a>]
+[TITLE: SOURCE_URL]
 
 Don't combine sources, list each source separately, e.g. [TITLE1][TITLE2].
