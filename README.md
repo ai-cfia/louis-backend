@@ -23,7 +23,7 @@ docker build -t louis-demo .
 test locally:
 
 ```
-docker run -p 5000:5000 louis-demo
+docker run -p 5000:5000 -e PORT=5000 louis-demo
 ```
 
 output:
@@ -73,6 +73,19 @@ docker push <registry>/<project-id>/<repository>/louis-demo
 https://cloud.google.com/api-gateway/docs/get-started-cloud-run
 
 https://cloud.google.com/run/docs/configuring/static-outbound-ip?utm_campaign=CDR_ahm_aap-severless_cloud-run-faq_&utm_source=external&utm_medium=web
+
+## Manually testing endpoints
+
+```
+curl -X POST https://$HOSTNAME:$PORT/search -H "Content-Type: application/json" --data '{"query": "bacteria"}'
+```
+
+## psycopg native extensions use
+
+```
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`p
+g_config --libdir`; flask run --debug
+```
 
 ## Layers
 
