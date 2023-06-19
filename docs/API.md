@@ -1,3 +1,5 @@
+# Application Programming Interfaces (API)
+
 ## Running and testing the API
 
 Running:
