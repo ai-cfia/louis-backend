@@ -1,116 +1,51 @@
-# inspection.canada.ca crawler
+# louis backend
+
+## Overview
+
+This project contains the Python code and SQL schema for the Louis project
+
+For more information ou Louis, refer to: [https://github.com/ai-cfia/louis](Louis main documentation).
 
 ## Table of content:
 
+* [Deployment](docs/DEPLOYMENT.md)
+* [Crawler documentation](docs/CRAWL.md)
+* [DB documentation](docs/DB.md)
+* [API documentation](docs/API.md)
 
-* [Crawler documentation](CRAWL.md)
-* [DB documentation](DB.md)
-* [API documentation](API.md)
-
-## Deployment
-
-Edit configurations
-
-* .env.prod: your .env for your container
-* gunicorn_config.py: production WSGI server
-
-Build (do this from your WSL Ubuntu where Docker is already installed):
-
-```
-docker build -t louis-demo .
-```
-
-test locally:
-
-```
-docker run -p 5000:5000 -e PORT=5000 louis-demo
-```
-
-output:
-
-```
-ngadamr@QCMONTC701988P:~/src/louis-crawler$ docker run -p 5000:5000 louis-demo
-[2023-06-14 19:12:56 +0000] [1] [INFO] Starting gunicorn 20.1.0
-[2023-06-14 19:12:56 +0000] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
-[2023-06-14 19:12:56 +0000] [1] [INFO] Using worker: gthread
-[2023-06-14 19:12:56 +0000] [7] [INFO] Booting worker with pid: 7
-[2023-06-14 19:12:57 +0000] [8] [INFO] Booting worker with pid: 8
-[2023-06-14 19:12:57 +0000] [23] [INFO] Booting worker with pid: 23
-[2023-06-14 19:12:57 +0000] [24] [INFO] Booting worker with pid: 24
-INFO:numexpr.utils:NumExpr defaulting to 8 threads.
-INFO:numexpr.utils:NumExpr defaulting to 8 threads.
-INFO:numexpr.utils:NumExpr defaulting to 8 threads.
-INFO:numexpr.utils:NumExpr defaulting to 8 threads.
-```
-
-## pushing to azure
-
-You first need to push the container to the private registry:
-
-```
-docker tag louis-demo $CONTAINER_REGISTRY.azurecr.io/louis-demo
-docker login -u $CONTAINER_REGISTRY_ADMIN --pasword-stdin $CONTAINER_REGISTRY
-docker push $CONTAINER_REGISTRY.azurecr.io/louis-demo
-```
-
-The password and username $CONTAINER_REGISTRY_ADMIN is from from Portal Azure Access Keys page of the container registry view.
-
-## pushing to google cloud run
-
-https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling
-
-```
-sudo snap install google-cloud-cli --classic
-gcloud auth configure-docker <your registry location>
-docker tag louis-demo <registry>/<project-id>/<repository>/louis-demo
-docker push <registry>/<project-id>/<repository>/louis-demo
-```
-
-...and you can then deploy
-
-## fixing errors 308
-
-https://cloud.google.com/api-gateway/docs/get-started-cloud-run
-
-https://cloud.google.com/run/docs/configuring/static-outbound-ip?utm_campaign=CDR_ahm_aap-severless_cloud-run-faq_&utm_source=external&utm_medium=web
-
-## Manually testing endpoints
-
-```
-curl -X POST https://$HOSTNAME:$PORT/search -H "Content-Type: application/json" --data '{"query": "bacteria"}'
-```
-
-## psycopg native extensions use
-
-```
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`p
-g_config --libdir`; flask run --debug
-```
-
-## Layers
-
-Layers:
-
-* louis/db.py: any interaction with the postgresql database is done here
-* louis/requests.py: creation of requests here
-* louis/responses.py: creation of responses here
-* louis/settings.py: configuration of the crawler. reads from .env
-* louis/chunking.py: chunking logic
-* louis/openai.py: openai API interactions
-
-## planned functionality
+## functionality overview
 
 * crawl extract content (main tag) from main website and store in postgres
 * separate content into chunks
 * get embeddings from chunks
 * index documents using embeddings and vectorstore
-* build search API (converting queries to embedding and searching vectorstore)
-* plugin search functionality in conversational agent
+* search API: converting queries to embedding and searching vectorstore
+* agent logic (based on langchain) to take user queries and obtain answers from searcg results, LLM and other search tools
 
-stretch
+## planned functionality
 
+* improve search performance
+* index more knowledge based related to the CFIA regulatory work
+* build continuous indexing of new pages
 * build indexing-on-request API (can accept, queue and process external links)
+* switch to tool and have LLM decide which tool to use to answer user query
 
+## Layers
+
+Layers:
+
+* louis.db: any interaction with the postgresql database is done here
+* louis.blueprints: API are defined here as blueprints for Flask
+* louis.agents: agent logic
+* louis.crawler:
+  * .requests: creation of requests here
+  * .responses: creation of responses here
+  * .settings: configuration of the crawler. reads from .env
+  * .chunking.py: chunking logic (splitting docs into logical blocks)
+* louis.models: interactions with LLM
+  * openai.py: openai API interactions
+* louis.prompts: natural language configuration of agents
+* louis.tools: tools that can be used by the LLM, described with natural language
 
 ## References
 
