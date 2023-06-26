@@ -86,17 +86,17 @@ class TestDB(unittest.TestCase):
             row = db.fetch_crawl_row(cursor, "https://inspection.canada.ca/splash")
             self.connection.rollback()
         self.assertEqual(row['url'], "https://inspection.canada.ca/splash")
-        self.assertEqual(str(row['id']), "37ea48dc-f082-44fe-b48d-b4e6b92582ed")
+        self.assertEqual(row['title'], "Test Title")
 
     def test_fetch_chunk_row(self):
         """sample test to check if fetch_chunk_row works"""
         with db.cursor(self.connection) as cursor:
             # select id from chunk join crawl ON public.chunk.crawl_id = public.crawl.id where url = 'https://inspection.canada.ca/splash'
-            row = db.fetch_chunk_token_row(cursor, "postgresql://inspection.canada.ca/public/chunk/5f3f01f1-0772-43a0-94b8-8547651a3562")
+            row = db.fetch_chunk_token_row(cursor, "postgresql://inspection.canada.ca/public/chunk/469812c5-190c-4e56-9f88-c8621592bcb5")
             self.connection.rollback()
-        self.assertEqual(str(row['chunk_id']), "5f3f01f1-0772-43a0-94b8-8547651a3562")
-        self.assertEqual(str(row['token_id']), '260ccded-f58c-40be-8a35-3ced2c2e6b75')
-        self.assertEqual(len(row['tokens']), 25)
+        self.assertEqual(len(row['tokens']), 76)
+        self.assertEqual(str(row['chunk_id']), "469812c5-190c-4e56-9f88-c8621592bcb5")
+        self.assertEqual(str(row['token_id']), 'dbb7b498-2cbf-4ae9-aa10-3169cc72f285')
 
 
     def test_fetch_chunk_id_without_embedding(self):
@@ -121,5 +121,14 @@ class TestDB(unittest.TestCase):
         self.assertEqual(parsed['entity_uuid'], entity_uuid)
         self.assertEqual(parsed['parameters']['encoding'][0], "cl100k_base")
 
-    def test_match_documents(self):
-        louis.models.openai.fetch_embedding('what are the cooking temperatures for e.coli?')
+    def test_match_documents_text_query(self):
+        with db.cursor(self.connection) as cursor:
+            docs = db.match_documents_from_text_query(cursor, 'what are the cooking temperatures for e.coli?')
+            self.connection.rollback()
+        self.assertEqual(len(docs), 10)
+
+    def test_president_of_cfia(self):
+        with db.cursor(self.connection) as cursor:
+            docs = db.match_documents_from_text_query(cursor, 'who is the president of the CFIA?')
+            self.connection.rollback()
+        self.assertEqual(docs[0]['title'], 'Dr. Harpreet S. Kochhar - Canadian Food Inspection Agency')

@@ -166,3 +166,4 @@ Cache/
 **/*.zip
 static/**
 *.json
+**/dumps/**
