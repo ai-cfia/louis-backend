@@ -15,6 +15,8 @@ import numpy as np
 
 from psycopg.rows import dict_row
 
+from louis.models import openai
+
 LOUIS_DSN = os.environ.get("LOUIS_DSN")
 
 def connect_db():
@@ -22,7 +24,7 @@ def connect_db():
     connection = psycopg.connect(
         conninfo=LOUIS_DSN,
         row_factory=dict_row,
-        autocommit=True)
+        autocommit=False)
     # psycopg.extras.register_uuid()
     register_vector(connection)
     return connection
@@ -223,3 +225,25 @@ def match_documents(cursor, query_embedding):
 
     # turn into list of dict now to preserve dictionaries
     return [dict(r) for r in cursor.fetchall()]
+
+def match_documents_from_text_query(cursor, query):
+    data = {
+        'query': query,
+        'tokens': openai.get_tokens_from_text(query)
+    }
+    results = cursor.execute("""
+        SELECT *
+        FROM query
+        WHERE tokens = %(tokens)s::integer[]
+    """, data)
+    db_data = results.fetchone()
+    if not db_data:
+        data['embedding'] = openai.fetch_embedding(data['tokens'])
+        results = cursor.execute('INSERT INTO query(query, tokens, embedding) VALUES(%(query)s, %(tokens)s, %(embedding)s) RETURNING id', data)
+        data['query_id'] = results.fetchone()['id']
+    else:
+        data.update(db_data)
+    docs = match_documents(cursor, data['embedding'])
+
+    return docs
+

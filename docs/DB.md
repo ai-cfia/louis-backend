@@ -17,13 +17,13 @@ pg_ctl start
 ## changing default template to utf-8
 
 if the default database is set to SQL_ASCII, it will cause problems:
+
 ```
 UPDATE pg_database SET datistemplate = FALSE WHERE datname = 'template1';
 DROP DATABASE template1;
 CREATE DATABASE template1 WITH TEMPLATE = template0 ENCODING = 'UTF8';
 UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'template1';
 \c template1
-
 VACUUM FREEZE;
 ```
 

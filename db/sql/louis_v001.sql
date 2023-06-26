@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS vector;
 
-create table if not exists public.crawl (
+create table if not exists crawl (
 	id uuid default uuid_generate_v4 (),
 	url text,
 	title text,
@@ -13,41 +13,41 @@ create table if not exists public.crawl (
 	unique(url, last_updated)
 );
 
-create table if not exists public.link (
-	source_crawl_id uuid references public.crawl(id),
-	destination_crawl_id uuid references public.crawl(id),
+create table if not exists link (
+	source_crawl_id uuid references crawl(id),
+	destination_crawl_id uuid references crawl(id),
 	primary key(source_crawl_id, destination_crawl_id)
 );
 
-create table if not exists public.chunk (
+create table if not exists chunk (
 	id uuid default uuid_generate_v4 (),
-	crawl_id uuid references public.crawl(id),
+	crawl_id uuid references crawl(id),
 	title text,
 	text_content text,
 	primary key(id),
 	unique(text_content)
 );
 
-create table if not exists public.token (
+create table if not exists token (
 	id uuid default uuid_generate_v4 (),
-	chunk_id uuid references public.chunk(id),
+	chunk_id uuid references chunk(id),
 	tokens INTEGER[],
 	encoding text default 'cl100k_base',
 	primary key(id),
 	unique(tokens)
 );
 
-create table if not exists public."text-embedding-ada-002" (
+create table if not exists "ada_002" (
 	id uuid default uuid_generate_v4 (),
-	token_id uuid references public.token(id),
+	token_id uuid references token(id),
 	embedding vector(1536),
 	primary key(id),
 	unique(token_id)
 );
 
-drop view public.documents;
+drop view documents;
 
-create view public.documents as(
+create view documents as(
 	select
 		crawl.id as id,
 		crawl.url as url,
@@ -57,13 +57,13 @@ create view public.documents as(
 		chunk.text_content as content,
 		embedding.embedding as embedding,
 		cardinality(token.tokens) as tokens_count
-	from crawl, chunk, token, "text-embedding-ada-002" as embedding
+	from crawl, chunk, token, "ada_002" as embedding
 	where crawl.id = chunk.crawl_id
 	and chunk.id = token.chunk_id
 	and token.id = embedding.token_id
 );
 
-create or replace function public.match_documents (
+create or replace function match_documents (
   query_embedding vector(1536),
   match_threshold float,
   match_count int
@@ -99,5 +99,5 @@ $$;
 -- probes: lists / 10 for up to 1M rows and sqrt(lists) for over 1M rows
 -- 83K records = 83 lists and 8 probes
 create index if not exists t_ada002_embedding_cosine_idx
-	ON public."text-embedding-ada-002"
+	ON "ada_002"
 	USING ivfflat (embedding vector_cosine_ops) WITH (lists = 83);
