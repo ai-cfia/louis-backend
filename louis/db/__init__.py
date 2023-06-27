@@ -18,13 +18,16 @@ from psycopg.rows import dict_row
 from louis.models import openai
 
 LOUIS_DSN = os.environ.get("LOUIS_DSN")
+LOUIS_SCHEMA = os.environ.get("LOUIS_SCHEMA")
 
 def connect_db():
     """Connect to the postgresql database and return the connection."""
+    print(f"Connecting to {LOUIS_SCHEMA}")
     connection = psycopg.connect(
         conninfo=LOUIS_DSN,
         row_factory=dict_row,
-        autocommit=False)
+        autocommit=False,
+        options=f"-c search_path={LOUIS_SCHEMA},public")
     # psycopg.extras.register_uuid()
     register_vector(connection)
     return connection
@@ -153,7 +156,7 @@ def fetch_links(cursor, url):
     data['destination_urls'] = [r['url'] for r in cursor.fetchall()]
     return data['destination_urls']
 
-def fetch_chunk_id_without_embedding(cursor, embedding_model='text-embedding-ada-002'):
+def fetch_chunk_id_without_embedding(cursor, embedding_model='ada_002'):
     """Fetch all chunk ids without an embedding."""
     query = sql.SQL(
         "SELECT chunk_id FROM public.chunk"

@@ -12,3 +12,4 @@ if [ ! -f "$NAME.zip" ]; then
 else
     echo "File $NAME.zip already exists"
 fi
+
