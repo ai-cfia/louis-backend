@@ -169,18 +169,18 @@ BEGIN
   END LOOP;
 
 -- Create functions 
-  PERFORM set_search_path(dest_schema || ', public');
-  FOR func_oid IN
-    SELECT oid
-      FROM pg_proc 
-     WHERE pronamespace = src_oid
-
-  LOOP      
-    SELECT pg_get_functiondef(func_oid) INTO qry;
-    SELECT replace(qry, source_schema, dest_schema) INTO dest_qry;
-    EXECUTE dest_qry;
-
-  END LOOP;
+--  PERFORM set_search_path(dest_schema || ', public');
+--  FOR func_oid IN
+--    SELECT oid
+--      FROM pg_proc 
+--     WHERE pronamespace = src_oid
+--
+--  LOOP      
+--    SELECT pg_get_functiondef(func_oid) INTO qry;
+--    SELECT replace(qry, source_schema, dest_schema) INTO dest_qry;
+--    EXECUTE dest_qry;
+--
+--  END LOOP;
   
   RETURN; 
  
@@ -191,20 +191,3 @@ $BODY$
   COST 100;
 ALTER FUNCTION clone_schema(text, text, boolean)
   OWNER TO postgres;
-  
- 
- CREATE OR REPLACE FUNCTION public.copy_table(
-    source_schema text,
-    dest_schema text,
-    table_name text)
-  RETURNS void AS
-$BODY$
-BEGIN
-	EXECUTE 'INSERT INTO ' || dest_schema || '.' || quote_ident(table_name) || ' SELECT * FROM ' || quote_ident(source_schema) || '.' || quote_ident(table_name) || ';';
-end;
-$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION copy_table(text, text, text)
-  OWNER TO postgres;
-  
