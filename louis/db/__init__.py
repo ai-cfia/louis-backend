@@ -119,25 +119,21 @@ def link_pages(cursor, source_url, destination_url):
         'source_url': source_url,
         'destination_url': destination_url,
     }
-    try:
-        cursor.execute(
-            "SELECT id FROM public.crawl WHERE url = %(source_url)s ORDER BY last_updated DESC LIMIT 1",
-            data
-        )
-        data['source_crawl_id'] = cursor.fetchone()['id']
-        cursor.execute(
-            "SELECT id FROM public.crawl WHERE url = %(destination_url)s ORDER BY last_updated DESC LIMIT 1",
-            data
-        )
-        data['destination_crawl_id'] = cursor.fetchone()['id']
-        cursor.execute(
-            "INSERT INTO public.link (source_crawl_id, destination_crawl_id)"
-            " VALUES (%(source_crawl_id)s, %(destination_crawl_id)s)",
-            data
-        )
-    except psycopg.IntegrityError:
-        # ignore duplicates and keep processing
-        return
+    cursor.execute(
+        "SELECT id FROM public.crawl WHERE url = %(source_url)s ORDER BY last_updated DESC LIMIT 1",
+        data
+    )
+    data['source_crawl_id'] = cursor.fetchone()['id']
+    cursor.execute(
+        "SELECT id FROM public.crawl WHERE url = %(destination_url)s ORDER BY last_updated DESC LIMIT 1",
+        data
+    )
+    data['destination_crawl_id'] = cursor.fetchone()['id']
+    cursor.execute(
+        "INSERT INTO public.link (source_crawl_id, destination_crawl_id)"
+        " VALUES (%(source_crawl_id)s, %(destination_crawl_id)s) ON CONFLICT DO NOTHING",
+        data
+    )
 
 
 def fetch_links(cursor, url):

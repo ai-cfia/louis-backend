@@ -30,7 +30,7 @@ class TestDB(unittest.TestCase):
         """sample test to check if the schema is correct and idempotent"""
         with open("db/dumps/louis_v002/schema.sql", encoding='utf-8') as schema_file:
             schema = schema_file.read()
-
+            schema = schema.replace('louis_v002', 'test')
         with db.cursor(self.connection) as cursor:
             cursor.execute(schema)
             self.connection.rollback()
@@ -66,7 +66,7 @@ class TestDB(unittest.TestCase):
             db.store_embedding_item(cursor, items.EmbeddingItem({
                 "token_id": "00000000-0000-0000-0000-000000000000",
                 "embedding": list(range(0, 1536)),
-                "embedding_model": "text-embedding-ada-002"
+                "embedding_model": "ada_002"
             }))
             self.connection.rollback()
 
@@ -86,7 +86,7 @@ class TestDB(unittest.TestCase):
             row = db.fetch_crawl_row(cursor, "https://inspection.canada.ca/splash")
             self.connection.rollback()
         self.assertEqual(row['url'], "https://inspection.canada.ca/splash")
-        self.assertEqual(row['title'], "Test Title")
+        self.assertEqual(row['title'], "Canadian Food Inspection Agency / Agence canadienne d'inspection des aliments")
 
     def test_fetch_chunk_row(self):
         """sample test to check if fetch_chunk_row works"""

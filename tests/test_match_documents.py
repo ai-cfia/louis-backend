@@ -33,4 +33,5 @@ class TestMatchDocuments(unittest.TestCase):
         with db.cursor(self.connection) as cursor:
             documents = db.match_documents(cursor, query_embedding)
         self.assertEqual(len(documents), 10)
-        self.assertEqual(str(documents[0]['id']), 'bfd82860-4ad9-42ae-b7d6-4d087b39a085')
+        self.assertEqual(str(documents[0]['title']), 'Control measures for Listeria monocytogenes in ready-to-eat foods - Canadian Food Inspection Agency')
+        self.assertEqual(str(documents[0]['id']), 'cfa971b6-48f5-4ad4-992c-a1b4b2fb1b4d')
