@@ -3,7 +3,9 @@ DIRNAME=`dirname $0`
 
 $PSQL_ADMIN -f $DIRNAME/sql/fix-utf8-template.sql
 $PSQL_ADMIN -c "CREATE USER $USER; ALTER USER $USER WITH SUPERUSER;"
-createdb -E utf-8 inspection.canada.ca
+createdb -E utf-8 $PGBASE
 pip install pgxnclient
 pgxn install vector
-$DIRNAME/load-db.sh dumps/inspection.canada.ca.2023-06-09.pg_dump
+
+$PSQL_ADMIN -c "SET search_path TO public; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS vector;"
+# $DIRNAME/load-versioned-schema.sh $DIRNAME/dumps/louis_v002
