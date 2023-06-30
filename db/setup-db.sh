@@ -8,4 +8,3 @@ pip install pgxnclient
 pgxn install vector
 
 $PSQL_ADMIN -c "SET search_path TO public; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS vector;"
-# $DIRNAME/load-versioned-schema.sh $DIRNAME/dumps/louis_v002
