@@ -11,9 +11,13 @@ SELECT pg_catalog.set_config('search_path', '', false);
 -- Name: louis_v002; Type: SCHEMA; Schema: -; Owner: -
 --
 
+
 CREATE SCHEMA louis_v002;
 
+SET search_path to louis_v002, public;
 
+create type score_type as enum('recency', 'traffic');
+create type encoding as enum('cl100k_base');
 
 
 
@@ -21,10 +25,10 @@ CREATE SCHEMA louis_v002;
 -- Name: ada_002; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.ada_002 (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+CREATE TABLE ada_002 (
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
     token_id uuid,
-    embedding public.vector(1536)
+    embedding vector(1536)
 );
 
 
@@ -32,8 +36,8 @@ CREATE TABLE louis_v002.ada_002 (
 -- Name: chunk; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.chunk (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+CREATE TABLE chunk (
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
     crawl_id uuid,
     title text,
     text_content text
@@ -44,8 +48,8 @@ CREATE TABLE louis_v002.chunk (
 -- Name: crawl; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.crawl (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+CREATE TABLE crawl (
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
     url text,
     title text,
     lang character(2),
@@ -60,10 +64,10 @@ CREATE TABLE louis_v002.crawl (
 -- Name: score; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.score (
+CREATE TABLE score (
     entity_id uuid,
     score double precision,
-    score_type public.score_type
+    score_type score_type
 );
 
 
@@ -71,10 +75,10 @@ CREATE TABLE louis_v002.score (
 -- Name: scoring; Type: VIEW; Schema: louis_v002; Owner: -
 --
 
-CREATE VIEW louis_v002.scoring AS
+CREATE VIEW scoring AS
  SELECT score.entity_id,
     avg(score.score) AS score
-   FROM louis_v002.score
+   FROM score
   GROUP BY score.entity_id;
 
 
@@ -82,11 +86,11 @@ CREATE VIEW louis_v002.scoring AS
 -- Name: token; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.token (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+CREATE TABLE token (
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
     chunk_id uuid,
     tokens integer[],
-    encoding public.encoding
+    encoding encoding
 );
 
 
@@ -94,7 +98,7 @@ CREATE TABLE louis_v002.token (
 -- Name: documents; Type: VIEW; Schema: louis_v002; Owner: -
 --
 
-CREATE VIEW louis_v002.documents AS
+CREATE VIEW documents AS
  SELECT crawl.id,
     crawl.url,
     crawl.html_content,
@@ -105,11 +109,11 @@ CREATE VIEW louis_v002.documents AS
     cardinality(token.tokens) AS tokens_count,
     crawl.last_updated,
     scoring.score
-   FROM louis_v002.crawl,
-    louis_v002.chunk,
-    louis_v002.token,
-    louis_v002.ada_002 embedding,
-    louis_v002.scoring
+   FROM crawl,
+    chunk,
+    token,
+    ada_002 embedding,
+    scoring
   WHERE ((crawl.id = chunk.crawl_id) AND (chunk.id = token.chunk_id) AND (token.id = embedding.token_id) AND (crawl.id = scoring.entity_id));
 
 
@@ -117,7 +121,7 @@ CREATE VIEW louis_v002.documents AS
 -- Name: link; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.link (
+CREATE TABLE link (
     source_crawl_id uuid NOT NULL,
     destination_crawl_id uuid NOT NULL
 );
@@ -127,26 +131,26 @@ CREATE TABLE louis_v002.link (
 -- Name: query; Type: TABLE; Schema: louis_v002; Owner: -
 --
 
-CREATE TABLE louis_v002.query (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+CREATE TABLE query (
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
     query text,
     tokens integer[],
-    embedding public.vector(1536),
+    embedding vector(1536),
     encoding text DEFAULT 'cl100k_base'::text,
     model text DEFAULT 'ada_002'::text
 );
 
 --
--- Name: match_documents(public.vector, double precision, integer); Type: FUNCTION; Schema: louis_v002; Owner: -
+-- Name: match_documents(vector, double precision, integer); Type: FUNCTION; Schema: louis_v002; Owner: -
 --
 
-CREATE FUNCTION louis_v002.match_documents(query_embedding public.vector, match_threshold double precision, match_count integer) RETURNS TABLE(id uuid, url text, title text, subtitle text, content text, similarity double precision, tokens_count integer, last_updated text, score double precision)
+CREATE FUNCTION match_documents(query_embedding vector, match_threshold double precision, match_count integer) RETURNS TABLE(id uuid, url text, title text, subtitle text, content text, similarity double precision, tokens_count integer, last_updated text, score double precision)
     LANGUAGE sql
     AS $$
 		SET ivfflat.probes = 8;
 		with documents as (
-			select documents.*, 1 - (documents.embedding operator(public.<=>) query_embedding) as similarity
-			from louis_v002.documents
+			select documents.*, 1 - (documents.embedding operator(<=>) query_embedding) as similarity
+			from documents
 		)
 		select
 		    documents.id,
@@ -167,7 +171,7 @@ CREATE FUNCTION louis_v002.match_documents(query_embedding public.vector, match_
 -- Name: ada_002 ada_002_pkey; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.ada_002
+ALTER TABLE ONLY ada_002
     ADD CONSTRAINT ada_002_pkey PRIMARY KEY (id);
 
 
@@ -175,7 +179,7 @@ ALTER TABLE ONLY louis_v002.ada_002
 -- Name: chunk chunk_pkey; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.chunk
+ALTER TABLE ONLY chunk
     ADD CONSTRAINT chunk_pkey PRIMARY KEY (id);
 
 
@@ -183,7 +187,7 @@ ALTER TABLE ONLY louis_v002.chunk
 -- Name: chunk chunk_text_content_key; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.chunk
+ALTER TABLE ONLY chunk
     ADD CONSTRAINT chunk_text_content_key UNIQUE (text_content);
 
 
@@ -191,7 +195,7 @@ ALTER TABLE ONLY louis_v002.chunk
 -- Name: crawl crawl_pkey; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.crawl
+ALTER TABLE ONLY crawl
     ADD CONSTRAINT crawl_pkey PRIMARY KEY (id);
 
 
@@ -199,7 +203,7 @@ ALTER TABLE ONLY louis_v002.crawl
 -- Name: crawl crawl_url_last_updated_key; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.crawl
+ALTER TABLE ONLY crawl
     ADD CONSTRAINT crawl_url_last_updated_key UNIQUE (url, last_updated);
 
 
@@ -207,7 +211,7 @@ ALTER TABLE ONLY louis_v002.crawl
 -- Name: link link_pkey; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.link
+ALTER TABLE ONLY link
     ADD CONSTRAINT link_pkey PRIMARY KEY (source_crawl_id, destination_crawl_id);
 
 
@@ -215,7 +219,7 @@ ALTER TABLE ONLY louis_v002.link
 -- Name: query query_pkey; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.query
+ALTER TABLE ONLY query
     ADD CONSTRAINT query_pkey PRIMARY KEY (id);
 
 
@@ -223,7 +227,7 @@ ALTER TABLE ONLY louis_v002.query
 -- Name: query query_tokens_key; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.query
+ALTER TABLE ONLY query
     ADD CONSTRAINT query_tokens_key UNIQUE (tokens);
 
 
@@ -231,7 +235,7 @@ ALTER TABLE ONLY louis_v002.query
 -- Name: token token_pkey; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.token
+ALTER TABLE ONLY token
     ADD CONSTRAINT token_pkey PRIMARY KEY (id);
 
 
@@ -239,7 +243,7 @@ ALTER TABLE ONLY louis_v002.token
 -- Name: token token_tokens_key; Type: CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.token
+ALTER TABLE ONLY token
     ADD CONSTRAINT token_tokens_key UNIQUE (tokens);
 
 
@@ -247,47 +251,47 @@ ALTER TABLE ONLY louis_v002.token
 -- Name: ada_002_embedding_idx; Type: INDEX; Schema: louis_v002; Owner: -
 --
 
-CREATE INDEX ada_002_embedding_idx ON louis_v002.ada_002 USING ivfflat (embedding public.vector_cosine_ops) WITH (lists='83');
+CREATE INDEX ada_002_embedding_idx ON ada_002 USING ivfflat (embedding vector_cosine_ops) WITH (lists='83');
 
 
 --
 -- Name: ada_002 ada_002_token_uuid_fkey; Type: FK CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.ada_002
-    ADD CONSTRAINT ada_002_token_uuid_fkey FOREIGN KEY (token_id) REFERENCES louis_v002.token(id) ON DELETE CASCADE;
+ALTER TABLE ONLY ada_002
+    ADD CONSTRAINT ada_002_token_uuid_fkey FOREIGN KEY (token_id) REFERENCES token(id) ON DELETE CASCADE;
 
 
 --
 -- Name: chunk chunk_crawl_uuid_fkey; Type: FK CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.chunk
-    ADD CONSTRAINT chunk_crawl_uuid_fkey FOREIGN KEY (crawl_id) REFERENCES louis_v002.crawl(id) ON DELETE CASCADE;
+ALTER TABLE ONLY chunk
+    ADD CONSTRAINT chunk_crawl_uuid_fkey FOREIGN KEY (crawl_id) REFERENCES crawl(id) ON DELETE CASCADE;
 
 
 --
 -- Name: link link_destination_crawl_id_fkey; Type: FK CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.link
-    ADD CONSTRAINT link_destination_crawl_id_fkey FOREIGN KEY (destination_crawl_id) REFERENCES louis_v002.crawl(id) ON DELETE CASCADE;
+ALTER TABLE ONLY link
+    ADD CONSTRAINT link_destination_crawl_id_fkey FOREIGN KEY (destination_crawl_id) REFERENCES crawl(id) ON DELETE CASCADE;
 
 
 --
 -- Name: link link_source_crawl_id_fkey; Type: FK CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.link
-    ADD CONSTRAINT link_source_crawl_id_fkey FOREIGN KEY (source_crawl_id) REFERENCES louis_v002.crawl(id) ON DELETE CASCADE;
+ALTER TABLE ONLY link
+    ADD CONSTRAINT link_source_crawl_id_fkey FOREIGN KEY (source_crawl_id) REFERENCES crawl(id) ON DELETE CASCADE;
 
 
 --
 -- Name: token token_chunk_uuid_fkey; Type: FK CONSTRAINT; Schema: louis_v002; Owner: -
 --
 
-ALTER TABLE ONLY louis_v002.token
-    ADD CONSTRAINT token_chunk_uuid_fkey FOREIGN KEY (chunk_id) REFERENCES louis_v002.chunk(id) ON DELETE CASCADE;
+ALTER TABLE ONLY token
+    ADD CONSTRAINT token_chunk_uuid_fkey FOREIGN KEY (chunk_id) REFERENCES chunk(id) ON DELETE CASCADE;
 
 
 --
