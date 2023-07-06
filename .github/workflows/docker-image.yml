@@ -69,3 +69,4 @@ jobs:
             AZURE_OPENAI_GPT_DEPLOYMENT=${{ secrets.AZURE_OPENAI_GPT_DEPLOYMENT }}
             AZURE_OPENAI_CHATGPT_DEPLOYMENT=${{ secrets.AZURE_OPENAI_CHATGPT_DEPLOYMENT }}
             LOUIS_DSN=${{ secrets.LOUIS_DSN }}
+            LOUIS_SCHEMA=${{ secrets.LOUIS_SCHEMA }}
