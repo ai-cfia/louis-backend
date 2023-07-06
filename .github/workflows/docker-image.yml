@@ -62,3 +62,10 @@ jobs:
           service: louis-api
           # Region in which the resource can be found.
           region: ${{ secrets.GCP_CLOUDRUN_REGION }}
+          env_vars: |
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            OPENAI_API_VERSION=${{ secrets.OPENAI_API_KEY }}
+            AZURE_OPENAI_SERVICE=${{ secrets.AZURE_OPENAI_SERVICE }}
+            AZURE_OPENAI_GPT_DEPLOYMENT=${{ secrets.AZURE_OPENAI_GPT_DEPLOYMENT }}
+            AZURE_OPENAI_CHATGPT_DEPLOYMENT=${{ secrets.AZURE_OPENAI_CHATGPT_DEPLOYMENT }}
+            LOUIS_DSN=${{ secrets.LOUIS_DSN }}
