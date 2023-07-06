@@ -22,5 +22,3 @@ pg_dump -n $SOURCE_SCHEMA -d $PGBASE \
     --no-table-access-method --no-tablespaces --schema-only \
     | grep -v "^SELECT pg_catalog.set_config('search_path', '', false);" \
     | sed s/$SOURCE_SCHEMA/$TARGET_SCHEMA/g > $SCHEMA_OUTPUT_FILENAME
-
- #   | grep -v "^SET" \
