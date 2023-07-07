@@ -40,7 +40,6 @@ for table in `echo $TABLES`; do
         echo "REINDEX TABLE $LOUIS_SCHEMA.$table;" >> $SCRIPT
     fi
 done
-echo "VACUUM ANALYZE;" >> $SCRIPT
 
 echo "EXECUTING:"
 echo "-----"
@@ -48,3 +47,4 @@ cat $SCRIPT
 echo "-----"
 
 psql "$LOUIS_DSN" -v ON_ERROR_STOP=1 --single-transaction -f $SCRIPT
+psql "$LOUIS_DSN" -v ON_ERROR_STOP=1 -c "VACUUM ANALYZE;"

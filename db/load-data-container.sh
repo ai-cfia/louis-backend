@@ -13,10 +13,19 @@ fi
 
 LOUIS_SCHEMA=$1
 echo "loading $LOUIS_SCHEMA"
-podman run -it --rm \
-    -e LOUIS_DSN="$LOUIS_DSN" \
-    -e LOUIS_SCHEMA=$LOUIS_SCHEMA \
-    -e LOAD_DATA_ONLY=$LOAD_DATA_ONLY \
-    -e DISABLE_TRIGGER_ALL=YES \
-    -v ./dumps/$LOUIS_SCHEMA:/data \
-    localhost/louis-data:nodata
+if [ -n "$MOUNT_DATA" ]; then
+    podman run -it --rm \
+        -e LOUIS_DSN="$LOUIS_DSN" \
+        -e LOUIS_SCHEMA=$LOUIS_SCHEMA \
+        -e LOAD_DATA_ONLY=$LOAD_DATA_ONLY \
+        -e DISABLE_TRIGGER_ALL=$DISABLE_TRIGGER_ALL \
+        -v $MOUNT_DATA:/data \
+        localhost/louis-data:nodata
+else
+    podman run -it --rm \
+        -e LOUIS_DSN="$LOUIS_DSN" \
+        -e LOUIS_SCHEMA=$LOUIS_SCHEMA \
+        -e LOAD_DATA_ONLY=$LOAD_DATA_ONLY \
+        -e DISABLE_TRIGGER_ALL=$DISABLE_TRIGGER_ALL \
+        localhost/louis-data:$LOUIS_SCHEMA
+fi
