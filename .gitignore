@@ -167,3 +167,4 @@ Cache/
 static/**
 *.json
 **/dumps/**
+**/.pgpassfile
