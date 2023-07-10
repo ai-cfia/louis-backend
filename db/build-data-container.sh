@@ -7,11 +7,13 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ ! -d "$DIRNAME/dumps/$1" ]; then
-    echo "No such schema $1, setting nocopy"
-    BUILD_ENV=nocopy
-else
-    BUILD_ENV=copy
+if [ -z "$BUILD_ENV" ]; then
+    if [ ! -d "$DIRNAME/dumps/$1" ]; then
+        echo "No such schema $1, setting nocopy"
+        BUILD_ENV=nocopy
+    else
+        BUILD_ENV=copy
+    fi
 fi
 
 LOUIS_SCHEMA=$1
