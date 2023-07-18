@@ -168,3 +168,4 @@ static/**
 *.json
 **/dumps/**
 **/.pgpassfile
+**/db/reports/**
