@@ -8,6 +8,10 @@ if [ -z "$LOUIS_SCHEMA" ]; then
     exit 1
 fi
 if [ -z "$LOAD_DATA_ONLY" ]; then
+    # create extensions
+    echo "Ensuring extensions vector and uuid-ossp exists"
+    psql "$LOUIS_DSN" -v ON_ERROR_STOP=1 --single-transaction -c "SET search_path TO public; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"; CREATE EXTENSION IF NOT EXISTS vector;"
+
     psql "$LOUIS_DSN" -v ON_ERROR_STOP=1 --single-transaction -f /data/schema.sql
     if [ "$?" -ne 0 ]; then
         echo "error loading /data/schema.sql. already created? use environment variable LOAD_DATA_ONLY"
@@ -15,10 +19,11 @@ if [ -z "$LOAD_DATA_ONLY" ]; then
     fi
 fi
 
+# create tables
 TABLES="crawl link chunk token ada_002 score query"
+echo "Creating tables $TABLES"
 SCRIPT=/data/copy-tables.sql
 echo "" > $SCRIPT
-
 for table in `echo $TABLES`; do
     csv="/data/$table.csv"
     if [ -f "$csv" ]; then
