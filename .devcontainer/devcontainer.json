@@ -1,12 +1,10 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "Python 3",
+	"name": "louis-backend",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:0-3.11",
+	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"features": {
-		"ghcr.io/devcontainers-contrib/features/postgres-asdf:1": {},
-		"ghcr.io/devcontainers/features/azure-cli:1": {}
 	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -21,15 +19,23 @@
 	"postCreateCommand": "pip3 install --user -r requirements.txt",
 
 	// Configure tool-specific properties.
-	// "customizations": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "GitHub.vscode-pull-request-github",
+        "ms-python.python",
+        "ms-python.black-formatter"
+      ]
+    }
+	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
-	"initializeCommand": "docker network inspect louis_network > /dev/null || docker network create louis_network --attachable",
+  "initializeCommand": "docker network inspect ailab_network > /dev/null || docker network create ailab_network --attachable",
 
 	"runArgs": [
-		"--dns=8.8.8.8",
-		"--hostname=louis-crawler",
-		"--network=louis_network"
+		"--hostname=louis-backend",
+		"--network=ailab_network"
 	]
 }
