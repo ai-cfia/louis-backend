@@ -15,6 +15,14 @@ Flows as follow:
 * items are received by the louis/pipeline.py
   * items are store in the database
 
+## layers
+
+* louis.crawler:
+  * .requests: creation of requests here
+  * .responses: creation of responses here
+  * .settings: configuration of the crawler. reads from .env
+  * .chunking.py: chunking logic (splitting docs into logical blocks)
+
 ## running the crawlers
 
 We use the crawlers in a little bit of a non-standard way.
@@ -42,3 +50,9 @@ kurt crawler: crawl tokens to embedding
 ```
 scrapy crawl kurt --logfile logs/kurt.log
 ```
+
+## References
+
+* [Chunking Strategies for LLM Applications](https://www.pinecone.io/learn/chunking-strategies/)
+* [Scrapy](https://docs.scrapy.org/en/latest/index.html)
+* [Scrapy: saving to postgres](https://scrapeops.io/python-scrapy-playbook/scrapy-save-data-postgres/)
