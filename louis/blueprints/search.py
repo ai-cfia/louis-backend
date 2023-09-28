@@ -11,4 +11,3 @@ def search_documents():
     """Search for documents similar to the query."""
     query = request.json['query']
     return jsonify(smartsearch(query))
-
