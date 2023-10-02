@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project contains the code for the backend of the louis project, tying the database to both louis-frontend and louis-backend
+This project contains the code for the backend of the louis project, serving as the server between louis-frontend and louis-db.
 
 For more information ou Louis, refer to: [https://github.com/ai-cfia/louis](Louis main documentation).
 
