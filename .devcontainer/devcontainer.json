@@ -28,7 +28,6 @@
 	"initializeCommand": "docker network inspect louis_network > /dev/null || docker network create louis_network --attachable",
 
 	"runArgs": [
-		"--dns=8.8.8.8",
 		"--hostname=louis-crawler",
 		"--network=louis_network"
 	]
