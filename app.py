@@ -7,6 +7,8 @@ from flask_cors import CORS
 
 from louis.blueprints.search import search
 from louis.blueprints.chat import chat
+from louis.blueprints.health import health
+
 
 app = Flask(__name__, static_folder='static/')
 CORS(app)
@@ -18,3 +20,4 @@ def static_file(path):
 
 app.register_blueprint(search, url_prefix='/search', strict_slashes=False)
 app.register_blueprint(chat, url_prefix='/chat', strict_slashes=False)
+app.register_blueprint(health, url_prefix='/health', strict_slashes=False)
